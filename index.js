@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose")
 require('dotenv').config()
+const cors = require('cors')
 
 const app = express();
 const MONGO_DB_USER = process.env.MONGO_DB_USER
@@ -13,6 +14,8 @@ app.use(
         extended: true
     }),
 )
+
+app.use(cors());
 
 app.use(express.json())
 

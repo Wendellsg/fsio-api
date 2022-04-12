@@ -10,14 +10,18 @@ router.post('/', async (req, res)=>{
         name,
         description,
         image,
-        video
+        video,
+        category,
+        summary,
     } = req.body
 
     const exercise = {
         name,
         description,
         image,
-        video
+        video,
+        category,
+        summary,
     }
 
     if(!name){
