@@ -37,7 +37,7 @@ app.use('/exercises', exercisesRoutes)
 mongoose.connect(`mongodb+srv://${MONGO_DB_USER}:${MONGO_DB_PASSWORD}@cluster0.2ahn3.mongodb.net/AppFisioDB?retryWrites=true&w=majority`)
     .then(()=>{
         console.log("Conectamos ao MongoDB")
-        app.listen(3000)
+        app.listen(9000)
     })
     .catch((err)=>{
         console.log(err)
