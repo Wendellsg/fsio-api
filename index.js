@@ -22,7 +22,7 @@ app.use(express.json())
 // Rota Inicial / EndPoint
 app.get('/',(req, res)=>{
     res.json({
-        message: 'Olá Mundo'
+        message: 'Seja bem vindo á Api do fisio App'
     })
 })
 
@@ -37,7 +37,7 @@ app.use('/exercises', exercisesRoutes)
 mongoose.connect(`mongodb+srv://${MONGO_DB_USER}:${MONGO_DB_PASSWORD}@cluster0.2ahn3.mongodb.net/AppFisioDB?retryWrites=true&w=majority`)
     .then(()=>{
         console.log("Conectamos ao MongoDB")
-        app.listen(9000)
+        app.listen(process.env.PORT||9000)
     })
     .catch((err)=>{
         console.log(err)
