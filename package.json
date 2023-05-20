@@ -9,6 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
+    "dev": "nest start --watch",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -27,7 +28,9 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/mongoose": "^9.2.2",
     "@nestjs/platform-express": "^9.0.0",
+    "@types/bcrypt": "^5.0.0",
     "axios": "^1.4.0",
+    "bcrypt": "^5.1.0",
     "mongoose": "^7.1.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0"

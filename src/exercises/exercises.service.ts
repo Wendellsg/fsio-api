@@ -14,8 +14,14 @@ export class ExercisesService {
     return 'This action adds a new exercise';
   }
 
-  async findAll() {
-    return await this.exerciseModel.find().exec();
+  async findAll(search?: string, category?: string) {
+    console.log(search, category);
+
+    const exercises = await this.exerciseModel.find({
+      name: { $regex: search || '', $options: 'i' },
+      category: { $regex: category || '', $options: 'i' },
+    });
+    return exercises;
   }
 
   findOne(id: number) {

@@ -1,26 +1,58 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { User } from 'src/users/entities/user.entity';
+import { UsersService } from 'src/users/users.service';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { compare } from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
+
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+    @InjectModel(User.name) private userModel: Model<User>,
+  ) {}
+
+  async login(email: string, password: string): Promise<string> {
+    // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
+    const user = await this.validateUser(email, password);
+
+    if (!user) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Gerar um token JWT
+    const token = this.jwtService.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '7d',
+      },
+    );
+
+    return token;
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  private async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.userModel.findOne({ email });
+
+    if (user && (await compare(password, user.password))) {
+      // Retorna o usuário se válido
+      return user;
+    }
+
+    return null;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  async me(id: string) {
+    const user = await this.usersService.findOne(id);
+    return user;
   }
 }

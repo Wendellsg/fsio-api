@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './auth/auth.module';
 import { ExercisesModule } from './exercises/exercises.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ExercisesModule } from './exercises/exercises.module';
     ),
     AuthModule,
     ExercisesModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
