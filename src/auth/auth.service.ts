@@ -43,6 +43,24 @@ export class AuthService {
   private async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userModel.findOne({ email });
 
+    if (!user) {
+      throw new HttpException(
+        {
+          message: 'Usuário não encontrado',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!(await compare(password, user.password))) {
+      throw new HttpException(
+        {
+          message: 'Senha incorreta',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     if (user && (await compare(password, user.password))) {
       // Retorna o usuário se válido
       return user;

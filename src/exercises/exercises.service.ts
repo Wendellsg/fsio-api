@@ -15,8 +15,6 @@ export class ExercisesService {
   }
 
   async findAll(search?: string, category?: string) {
-    console.log(search, category);
-
     const exercises = await this.exerciseModel.find({
       name: { $regex: search || '', $options: 'i' },
       category: { $regex: category || '', $options: 'i' },
