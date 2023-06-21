@@ -24,6 +24,15 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @UseGuards(AuthGuard)
+  @Patch('image')
+  updateProfileImage(@Request() request, @Body() body) {
+    return this.usersService.updateProfileImage(
+      request.user.id,
+      body.profileImage,
+    );
+  }
+
   @UseGuards(AdminAuthGuard)
   @Get()
   findAll() {

@@ -29,6 +29,32 @@ export class UsersService {
     }
   }
 
+  async updateProfileImage(userId: string, profileImage: string) {
+    if (!profileImage)
+      throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
+
+    try {
+      const updatedUser = await this.userModel.findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            image: profileImage,
+          },
+        },
+        {
+          new: true,
+        },
+      );
+
+      return {
+        message: 'User updated',
+        user: updatedUser,
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   findAll() {
     return this.userModel.find();
   }
@@ -42,6 +68,9 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
+    delete updateUserDto.password;
+    delete updateUserDto.email;
+
     try {
       const updatedUser = await this.userModel.findByIdAndUpdate(
         id,
