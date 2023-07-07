@@ -69,5 +69,5 @@ function extractTokenFromHeader(request: Request): string | undefined {
 function checkIfAdmin(payload: any): boolean {
   // Implement your logic to check if the user is an admin based on the payload
   // For example, you can check a property in the payload that indicates admin status
-  return payload.role === 'admin';
+  return payload.isAdmin ?? false;
 }

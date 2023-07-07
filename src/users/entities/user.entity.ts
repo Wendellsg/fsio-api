@@ -3,6 +3,11 @@ import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
+export class Patient {
+  userId: string;
+  diagnosis: string;
+}
+
 @Schema()
 export class User {
   @Prop()
@@ -77,13 +82,16 @@ export class User {
   addressState: string;
 
   @Prop()
-  adressCountry: string;
+  addressCountry: string;
 
   @Prop()
   zipCode: string;
 
   @Prop()
   birthDate: string;
+
+  @Prop()
+  patients: Patient[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

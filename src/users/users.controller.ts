@@ -40,9 +40,21 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('/by-doctor')
-  findAllByDoctor(@Request() request) {
-    return this.usersService.findAllByDoctor(request.user.id);
+  @Get('/by-email/:email')
+  findByEmail(@Param('email') email: string) {
+    return this.usersService.findByEmail(email);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('patient')
+  addPatient(@Request() request, @Body() body) {
+    return this.usersService.addPatient(request.user.id, body.patientId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('patient/:id')
+  removePatient(@Request() request, @Param('id') id: string) {
+    return this.usersService.removePatient(request.user.id, id);
   }
 
   @Get(':id')
