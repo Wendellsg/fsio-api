@@ -9,9 +9,22 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
-  create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto) {
     if (!createUserDto.email || !createUserDto.password) {
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
+    }
+
+    const findUser = await this.userModel.findOne({
+      email: createUserDto.email,
+    });
+
+    if (findUser) {
+      throw new HttpException(
+        {
+          message: 'Email já cadastrado',
+        },
+        HttpStatus.CONFLICT,
+      );
     }
 
     try {
@@ -25,6 +38,77 @@ export class UsersService {
 
       return user.save();
     } catch (error) {
+      if (error.code === 409) {
+        throw new HttpException(
+          {
+            message: 'Email já cadastrado',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      if (error.code === 400) {
+        throw new HttpException(
+          {
+            message: 'Email ou senha não informados',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async createByDoctor(createUserDto: CreateUserDto) {
+    if (!createUserDto.email || !createUserDto.name) {
+      throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
+    }
+
+    const findUser = await this.userModel.findOne({
+      email: createUserDto.email,
+    });
+
+    if (findUser) {
+      throw new HttpException(
+        {
+          message: 'Email já cadastrado',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      const randomPassword = Math.random().toString(36).slice(-8);
+
+      const encripted = bcrypt.hashSync(randomPassword, 10);
+
+      const user = new this.userModel({
+        name: createUserDto.name,
+        email: createUserDto.email,
+        password: encripted,
+      });
+
+      return user.save();
+    } catch (error) {
+      if (error.code === 409) {
+        throw new HttpException(
+          {
+            message: 'Email já cadastrado',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      if (error.code === 400) {
+        throw new HttpException(
+          {
+            message: 'Email ou nome não informados',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -63,15 +147,36 @@ export class UsersService {
     try {
       const user = await this.userModel.findById(id);
 
-      user.password = undefined;
+      delete user.password;
 
       if (!user)
-        throw new HttpException(
+        return new HttpException(
           {
             message: 'Usuário não encontrado',
           },
           HttpStatus.NOT_FOUND,
         );
+
+      return user;
+    } catch (error) {
+      console.log(error);
+
+      if (error.status === 404) throw error;
+
+      throw new HttpException(
+        {
+          message: 'Erro ao buscar usuário',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  async findPatients(id: string) {
+    try {
+      const user = await this.userModel.findById(id);
+
+      if (!user) throw new HttpException('Usuário não encontrado', 404);
 
       const patients = await Promise.all(
         user.patients.map(async (patient) => {
@@ -85,16 +190,75 @@ export class UsersService {
         }),
       );
 
-      user.patients = patients as unknown as Patient[];
-
-      return user;
+      return patients;
     } catch (error) {
+      console.log(error);
+
+      if (error.status === 404) throw error;
+
       throw new HttpException(
         {
           message: 'Erro ao buscar usuário',
         },
         HttpStatus.NOT_FOUND,
       );
+    }
+  }
+
+  async getPatient(patientId: string) {
+    try {
+      const user = await this.userModel.findById(patientId);
+
+      if (!user) throw new HttpException('Paciente não encontrado', 404);
+
+      delete user.password;
+      delete user.patients;
+      delete user.resetPasswordToken;
+      delete user.professionalLicense;
+      delete user.professionalLicenseImage;
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updatePatient(
+    userId: string,
+    patient: Partial<User>,
+    diagnosis: string,
+  ) {
+    try {
+      await this.userModel.findByIdAndUpdate(
+        patient._id,
+        {
+          $set: {
+            weight: patient.weight,
+            height: patient.height,
+          },
+        },
+        {
+          new: true,
+        },
+      );
+
+      await this.userModel.findOneAndUpdate(
+        {
+          _id: userId,
+          'patients.userId': patient._id,
+        },
+        {
+          $set: {
+            'patients.$.diagnosis': diagnosis,
+          },
+        },
+      );
+
+      return {
+        message: 'User updated',
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -111,6 +275,8 @@ export class UsersService {
         );
       return user;
     } catch (error) {
+      if (error.status === 404) throw error;
+
       throw new HttpException(
         {
           message: 'Erro ao buscar usuário',
@@ -144,6 +310,16 @@ export class UsersService {
 
   async addPatient(id: string, patientId: string) {
     try {
+      const user = await this.userModel.findById(id);
+
+      if (!user) throw new HttpException('Usuário não encontrado', 404);
+
+      if (user.patients.find((patient) => patient.userId === patientId))
+        throw new HttpException(
+          'Este Paciente já está em sua lista de pacientes',
+          HttpStatus.BAD_REQUEST,
+        );
+
       const updatedUser = await this.userModel.findByIdAndUpdate(
         id,
         {
@@ -163,7 +339,7 @@ export class UsersService {
         user: updatedUser,
       };
     } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw error;
     }
   }
 

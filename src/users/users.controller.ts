@@ -13,6 +13,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard, AdminAuthGuard } from 'src/auth/auth.guard';
+import { User } from './entities/user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -22,6 +23,46 @@ export class UsersController {
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Post('patients')
+  createPatient(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createByDoctor(createUserDto);
+  }
+
+  @UseGuards(AdminAuthGuard)
+  @Get('patients/:id')
+  getPatient(@Param('id') id: string) {
+    return this.usersService.getPatient(id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('patients')
+  addPatient(@Request() request, @Body() body) {
+    return this.usersService.addPatient(request.user.id, body.patientId);
+  }
+  @UseGuards(AuthGuard)
+  @Patch('patients/:id')
+  updatePatient(
+    @Request() request,
+    @Body()
+    body: {
+      patient: Partial<User>;
+      diagnosis: string;
+    },
+  ) {
+    return this.usersService.updatePatient(
+      request.user.id,
+      body.patient,
+      body.diagnosis,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('patients')
+  findPatients(@Request() request) {
+    return this.usersService.findPatients(request.user.id);
   }
 
   @UseGuards(AuthGuard)
@@ -43,12 +84,6 @@ export class UsersController {
   @Get('/by-email/:email')
   findByEmail(@Param('email') email: string) {
     return this.usersService.findByEmail(email);
-  }
-
-  @UseGuards(AuthGuard)
-  @Patch('patient')
-  addPatient(@Request() request, @Body() body) {
-    return this.usersService.addPatient(request.user.id, body.patientId);
   }
 
   @UseGuards(AuthGuard)

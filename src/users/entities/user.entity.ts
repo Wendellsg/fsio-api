@@ -6,10 +6,15 @@ export type UserDocument = HydratedDocument<User>;
 export class Patient {
   userId: string;
   diagnosis: string;
+  email?: string;
+  name?: string;
+  image?: string;
 }
 
 @Schema()
 export class User {
+  _id: string;
+
   @Prop()
   name: string;
 
@@ -62,6 +67,12 @@ export class User {
 
   @Prop()
   doctor: string;
+
+  @Prop()
+  height: number;
+
+  @Prop()
+  weight: number;
 
   @Prop()
   address: string;
