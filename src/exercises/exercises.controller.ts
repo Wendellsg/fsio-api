@@ -1,18 +1,18 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
-  UseGuards,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ExercisesService } from './exercises.service';
+import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
-import { AuthGuard, AdminAuthGuard } from 'src/auth/auth.guard';
+import { ExercisesService } from './exercises.service';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -34,7 +34,7 @@ export class ExercisesController {
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.exercisesService.findOne(+id);
+    return this.exercisesService.findOne(id);
   }
   @UseGuards(AdminAuthGuard)
   @Patch(':id')

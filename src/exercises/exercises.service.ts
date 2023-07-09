@@ -33,8 +33,17 @@ export class ExercisesService {
     return exercises;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} exercise`;
+  findOne(id: string) {
+    try {
+      return this.exerciseModel.findById(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: 'Erro ao buscar exercício',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   update(id: number, updateExerciseDto: UpdateExerciseDto) {
