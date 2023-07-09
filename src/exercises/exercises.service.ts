@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { CreateExerciseDto } from './dto/create-exercise.dto';
-import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { CreateExerciseDto } from './dto/create-exercise.dto';
+import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { Exercise, ExerciseDocument } from './entities/exercise.entity';
 
 @Injectable()
@@ -10,8 +10,19 @@ export class ExercisesService {
   constructor(
     @InjectModel(Exercise.name) private exerciseModel: Model<ExerciseDocument>,
   ) {}
-  create(createExerciseDto: CreateExerciseDto) {
-    return 'This action adds a new exercise';
+  async create(createExerciseDto: CreateExerciseDto) {
+    try {
+      const exercise = new this.exerciseModel(createExerciseDto);
+      await exercise.save();
+      return exercise;
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: 'Erro ao criar exercício',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async findAll(search?: string, category?: string) {
