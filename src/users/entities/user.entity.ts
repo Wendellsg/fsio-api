@@ -11,6 +11,31 @@ export class Patient {
   image?: string;
 }
 
+export class Routine {
+  id: string;
+  professionalId: string;
+  execerciseId: string;
+  createdAt: Date;
+  description: string;
+  frequency: number;
+  frequencyType: string;
+  repetitions: number;
+  series: number;
+  period: string;
+  activits?: Activity[];
+}
+
+export class Activity {
+  id: string;
+  routineId: string;
+  createdAt: Date;
+  pacientId: string;
+  execerciseId: string;
+  comentary: string;
+  painLevel: number;
+  effortLevel: number;
+}
+
 @Schema()
 export class User {
   _id: string;
@@ -106,6 +131,9 @@ export class User {
 
   @Prop()
   favoriteExercises: string[];
+
+  @Prop()
+  routines: Routine[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
+import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -111,6 +112,20 @@ export class UsersController {
   @Delete('patient/:id')
   removePatient(@Request() request, @Param('id') id: string) {
     return this.usersService.removePatient(request.user.id, id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post(':id/routines')
+  createRoutine(
+    @Param('id') id: string,
+    @Body() createRoutineDto: CreateRoutineDto,
+    @Request() request,
+  ) {
+    return this.usersService.createRoutine(
+      id,
+      createRoutineDto,
+      request.user.id,
+    );
   }
 
   @Get(':id')
