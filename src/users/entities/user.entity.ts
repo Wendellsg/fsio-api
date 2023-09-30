@@ -103,6 +103,9 @@ export class User {
 
   @Prop()
   patients: Patient[];
+
+  @Prop()
+  favoriteExercises: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

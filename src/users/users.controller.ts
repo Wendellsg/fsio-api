@@ -1,19 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Request,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthGuard, AdminAuthGuard } from 'src/auth/auth.guard';
 import { User } from './entities/user.entity';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
@@ -63,6 +63,27 @@ export class UsersController {
   @Get('patients')
   findPatients(@Request() request) {
     return this.usersService.findPatients(request.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('favorite-exercises')
+  addFavoriteExercise(
+    @Request() request,
+    @Body('exerciseId') exerciseId: string,
+  ) {
+    return this.usersService.addFavoriteExercise(request.user.id, exerciseId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('favorite-exercises/:exerciseId')
+  removeFavoriteExercise(
+    @Request() request,
+    @Param('exerciseId') exerciseId: string,
+  ) {
+    return this.usersService.removeFavoriteExercise(
+      request.user.id,
+      exerciseId,
+    );
   }
 
   @UseGuards(AuthGuard)

@@ -1,10 +1,10 @@
-import { Model } from 'mongoose';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import * as bcrypt from 'bcrypt';
+import { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Patient, User } from './entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -352,6 +352,52 @@ export class UsersService {
             patients: {
               userId: patientId,
             },
+          },
+        },
+        {
+          new: true,
+        },
+      );
+
+      return {
+        message: 'User updated',
+        user: updatedUser,
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async addFavoriteExercise(id: string, exerciseId: string) {
+    try {
+      const updatedUser = await this.userModel.findByIdAndUpdate(
+        id,
+        {
+          $push: {
+            favoriteExercises: exerciseId,
+          },
+        },
+        {
+          new: true,
+        },
+      );
+
+      return {
+        message: 'User updated',
+        user: updatedUser,
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async removeFavoriteExercise(id: string, exerciseId: string) {
+    try {
+      const updatedUser = await this.userModel.findByIdAndUpdate(
+        id,
+        {
+          $pull: {
+            favoriteExercises: exerciseId,
           },
         },
         {
