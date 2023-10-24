@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
+import { ObjectId } from 'mongodb';
 import { Model } from 'mongoose';
 import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -418,14 +419,51 @@ export class UsersService {
   async createRoutine(
     id: string,
     routine: CreateRoutineDto,
-    professionId: string,
+    professionalId: string,
   ) {
     try {
       const updatedUser = await this.userModel.findByIdAndUpdate(
         id,
         {
           $push: {
-            routines: { ...routine, professionId },
+            routines: {
+              ...routine,
+              professionalId,
+              _id: new ObjectId().toString(),
+            },
+          },
+        },
+        {
+          new: true,
+        },
+      );
+
+      return {
+        message: 'User updated',
+        user: updatedUser,
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async updateRoutine(
+    id: string,
+    routineId: string,
+    routine: CreateRoutineDto,
+  ) {
+    try {
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        {
+          _id: id,
+          'routines._id': routineId,
+        },
+        {
+          $set: {
+            'routines.$': {
+              ...routine,
+              _id: routineId,
+            },
           },
         },
         {

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Patch,
   Post,
@@ -126,6 +127,23 @@ export class UsersController {
       createRoutineDto,
       request.user.id,
     );
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(':id/routines/:routineId')
+  updateRoutine(
+    @Param('id') id: string,
+    @Param('routineId') routineId: string,
+    @Body() updateRoutineDto: CreateRoutineDto,
+    @Request() request,
+  ) {
+    if (request.user.id !== updateRoutineDto.professionalId)
+      throw new HttpException(
+        'Você não tem permissão para atualizar esta rotina',
+        400,
+      );
+
+    return this.usersService.updateRoutine(id, routineId, updateRoutineDto);
   }
 
   @Get(':id')

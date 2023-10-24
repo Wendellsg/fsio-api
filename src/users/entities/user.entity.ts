@@ -12,9 +12,9 @@ export class Patient {
 }
 
 export class Routine {
-  id: string;
+  _id: string;
   professionalId: string;
-  execerciseId: string;
+  exerciseId: string;
   createdAt: Date;
   description: string;
   frequency: number;
@@ -22,7 +22,7 @@ export class Routine {
   repetitions: number;
   series: number;
   period: string;
-  activits?: Activity[];
+  activities?: Activity[];
 }
 
 export class Activity {

@@ -34,7 +34,11 @@ export class ExercisesController {
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.exercisesService.findOne(id);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(this.exercisesService.findOne(id));
+      }, 1000); // 1000 milissegundos = 1 segundo
+    });
   }
   @UseGuards(AdminAuthGuard)
   @Patch(':id')
