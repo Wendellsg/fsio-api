@@ -56,6 +56,15 @@ $ yarn run test:e2e
 
 # test coverage
 $ yarn run test:cov
+
+
+```
+
+### DEPLOY
+
+```bash
+$ scp -i /path/of/key.pem -r ./dist user@192.168.0.0:~/AppFisioApi/
+
 ```
 
 ## Support
