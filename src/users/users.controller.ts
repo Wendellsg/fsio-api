@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
+import { CreateActivityDto } from './dto/create-activity.dto';
 import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -144,6 +145,21 @@ export class UsersController {
       );
 
     return this.usersService.updateRoutine(id, routineId, updateRoutineDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('routines/:routineId/activity')
+  createActivity(
+    @Param('id') id: string,
+    @Param('routineId') routineId: string,
+    @Body() createActivityDto: CreateActivityDto,
+    @Request() request,
+  ) {
+    return this.usersService.createActivity(
+      request.user.id,
+      routineId,
+      createActivityDto,
+    );
   }
 
   @Get(':id')

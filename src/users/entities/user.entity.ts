@@ -26,12 +26,9 @@ export class Routine {
 }
 
 export class Activity {
-  id: string;
-  routineId: string;
+  _id: string;
   createdAt: Date;
-  pacientId: string;
-  execerciseId: string;
-  comentary: string;
+  comments: string;
   painLevel: number;
   effortLevel: number;
 }

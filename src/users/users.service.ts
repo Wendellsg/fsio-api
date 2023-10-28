@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 import { Model } from 'mongoose';
+import { CreateActivityDto } from './dto/create-activity.dto';
 import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -463,6 +464,40 @@ export class UsersService {
             'routines.$': {
               ...routine,
               _id: routineId,
+            },
+          },
+        },
+        {
+          new: true,
+        },
+      );
+
+      return {
+        message: 'User updated',
+        user: updatedUser,
+      };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async createActivity(
+    id: string,
+    routineId: string,
+    createActivityDto: CreateActivityDto,
+  ) {
+    try {
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        {
+          _id: id,
+          'routines._id': routineId,
+        },
+        {
+          $push: {
+            'routines.$.activities': {
+              ...createActivityDto,
+              _id: new ObjectId().toString(),
+              createdAt: new Date(),
             },
           },
         },
