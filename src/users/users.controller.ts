@@ -162,6 +162,12 @@ export class UsersController {
     );
   }
 
+  @UseGuards(AuthGuard)
+  @Get('activities')
+  getActivities(@Request() request) {
+    return this.usersService.getActivities(request.user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);

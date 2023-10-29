@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 import { Model } from 'mongoose';
+import { Exercise } from 'src/exercises/entities/exercise.entity';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -11,7 +12,10 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Exercise.name) private exerciseModel: Model<Exercise>,
+  ) {}
   async create(createUserDto: CreateUserDto) {
     if (!createUserDto.email || !createUserDto.password) {
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
@@ -512,6 +516,64 @@ export class UsersService {
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getActivities(professionalId: string) {
+    try {
+      const activities = await this.userModel.aggregate([
+        { $limit: 20 },
+        {
+          $match: {
+            'routines.professionalId': professionalId,
+          },
+        },
+        {
+          $unwind: '$routines',
+        },
+        {
+          $unwind: '$routines.activities',
+        },
+        {
+          $project: {
+            _id: '$routines.activities._id',
+            createdAt: '$routines.activities.createdAt',
+            routineId: '$routines._id',
+            patientId: '$_id',
+            exerciseId: '$routines.exerciseId',
+            patientName: '$name',
+            patientImage: '$image',
+            painLevel: '$routines.activities.painLevel',
+            effortLevel: '$routines.activities.effortLevel',
+            comments: '$routines.activities.comments',
+          },
+        },
+      ]);
+
+      const exercises = await this.exerciseModel.find(
+        {
+          _id: {
+            $in: activities.map((activity) => activity.exerciseId),
+          },
+        },
+        {
+          name: 1,
+          image: 1,
+        },
+      );
+
+      activities.forEach((activity) => {
+        const exercise = exercises.find(
+          (exercise) => exercise._id.toString() === activity.exerciseId,
+        );
+
+        activity.exerciseName = exercise.name;
+        activity.exerciseImage = exercise.image;
+      });
+
+      return activities;
+    } catch (error) {
+      throw error;
     }
   }
 
