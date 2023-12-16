@@ -9,6 +9,7 @@ import { ExercisesModule } from './exercises/exercises.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
 import { AppointmentsModule } from './appointments/appointments.module';
+import { EvolutionsModule } from './evolutions/evolutions.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
     UsersModule,
     UploadsModule,
     AppointmentsModule,
+    EvolutionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
