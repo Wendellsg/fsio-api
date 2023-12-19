@@ -152,6 +152,14 @@ export class UsersService {
 
   async findOne(id: string) {
     try {
+      if (!id || id === 'undefined')
+        throw new HttpException(
+          {
+            message: 'Usuário não encontrado',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+
       const user = await this.userModel.findById(id);
 
       delete user.password;
@@ -214,6 +222,13 @@ export class UsersService {
 
   async getPatient(patientId: string) {
     try {
+      if (!patientId || patientId === 'undefined')
+        throw new HttpException(
+          {
+            message: 'Usuário não encontrado',
+          },
+          HttpStatus.NOT_FOUND,
+        );
       const user = await this.userModel.findById(patientId);
 
       if (!user) throw new HttpException('Paciente não encontrado', 404);
@@ -280,7 +295,14 @@ export class UsersService {
           },
           HttpStatus.NOT_FOUND,
         );
-      return user;
+
+      const payload = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      };
+      return payload;
     } catch (error) {
       if (error.status === 404) throw error;
 
