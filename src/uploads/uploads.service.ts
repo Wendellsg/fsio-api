@@ -1,7 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
+import { s3PreSignedUrl, s3Uploader } from 'utils/s3Uploader';
 import { CreateUploadDto } from './dto/create-upload.dto';
 import { UpdateUploadDto } from './dto/update-upload.dto';
-import { s3PreSignedUrl, s3Uploader } from 'src/utils/s3Uploader';
 
 const acepptedExtetion = {
   images: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'],
