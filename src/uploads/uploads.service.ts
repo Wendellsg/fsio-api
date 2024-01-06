@@ -1,5 +1,5 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { s3PreSignedUrl, s3Uploader } from 'src/uploads/s3Uploader';
+import { s3PreSignedUrl, s3Uploader } from 'src/uploads/s3-uploader';
 import { CreateUploadDto } from './dto/create-upload.dto';
 import { UpdateUploadDto } from './dto/update-upload.dto';
 
