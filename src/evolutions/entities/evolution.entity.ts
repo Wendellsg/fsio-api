@@ -1,51 +1,47 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { User } from 'src/users/entities/user.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
-export type TEvolution = {
-  _id: string;
-  professionalId: string;
-  patientId: string;
-  date: Date;
-  clinicalDiagnosis: string;
-  physicalDiagnosis: string;
-  evolution: string;
-};
-
-export type EvolutionDocument = HydratedDocument<Evolution>;
-
-@Schema()
+@Entity()
 export class Evolution {
-  _id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Prop()
-  patientId: string;
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn()
+  professional: User;
 
-  @Prop()
-  professionalId: string;
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn()
+  user: User;
 
-  @Prop()
+  @Column()
   date: Date;
 
-  @Prop()
+  @Column()
   clinicalDiagnosis: string;
 
-  @Prop()
+  @Column()
   physicalDiagnosis: string;
 
-  @Prop()
+  @Column()
   evolution: string;
 
-  @Prop({
-    type: Date,
-    default: Date.now,
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
 
-  @Prop({
-    type: Date,
-    default: Date.now,
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
 }
-
-export const EvolutionSchema = SchemaFactory.createForClass(Evolution);

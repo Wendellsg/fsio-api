@@ -1,37 +1,52 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-export type ExerciseDocument = HydratedDocument<Exercise>;
+export enum Category {
+  LEGS = 'legs',
+  ARMS = 'arms',
+  BACK = 'back',
+  CHEST = 'chest',
+  SHOULDERS = 'shoulders',
+  ABS = 'abs',
+  CARDIO = 'cardio',
+}
 
-@Schema()
+@Entity()
 export class Exercise {
-  @Prop({ required: true })
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ nullable: false })
   name: string;
 
-  @Prop({ required: true })
+  @Column({ nullable: false })
   description: string;
 
-  @Prop({ required: true })
-  category: string;
+  @Column({
+    type: 'enum',
+    enum: Category,
+    nullable: false,
+  })
+  category: Category;
 
-  @Prop()
+  @Column()
   image: string;
 
-  @Prop()
+  @Column()
   video: string;
 
-  @Prop()
+  @Column()
   summary: string;
 
-  @Prop({
-    default: new Date(),
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
 
-  @Prop({
-    default: new Date(),
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
 }
-
-export const ExerciseSchema = SchemaFactory.createForClass(Exercise);

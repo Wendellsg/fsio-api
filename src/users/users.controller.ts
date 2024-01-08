@@ -55,11 +55,7 @@ export class UsersController {
       diagnosis: string;
     },
   ) {
-    return this.usersService.updatePatient(
-      request.user.id,
-      body.patient,
-      body.diagnosis,
-    );
+    return this.usersService.updatePatient(body.patient);
   }
 
   @UseGuards(AuthGuard)
@@ -160,12 +156,6 @@ export class UsersController {
       routineId,
       createActivityDto,
     );
-  }
-
-  @UseGuards(AuthGuard)
-  @Get('activities')
-  getActivities(@Request() request) {
-    return this.usersService.getActivities(request.user.id);
   }
 
   @Get(':id')

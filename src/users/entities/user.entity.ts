@@ -1,136 +1,224 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { Appointment } from 'src/appointments/entities/appointment.entity';
+import { Exercise } from 'src/exercises/entities/exercise.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
-export type UserDocument = HydratedDocument<User>;
-
-export class Patient {
-  userId: string;
-  diagnosis: string;
-  email?: string;
-  name?: string;
-  image?: string;
+export enum Role {
+  PATIENT = 'patient',
+  PROFESSIONAL = 'professional',
+  ADMIN = 'admin',
 }
 
-export class Routine {
-  _id: string;
-  professionalId: string;
-  exerciseId: string;
-  createdAt: Date;
-  description: string;
-  frequency: number;
-  frequencyType: string;
-  repetitions: number;
-  series: number;
-  period: string;
-  activities?: Activity[];
-}
-
-export class Activity {
-  _id: string;
-  createdAt: Date;
-  comments: string;
-  painLevel: number;
-  effortLevel: number;
-}
-
-@Schema()
+@Entity()
 export class User {
-  _id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Prop()
+  @Column()
   name: string;
 
-  @Prop()
+  @Column()
   email: string;
 
-  @Prop()
+  @Column()
   password: string;
 
-  @Prop()
+  @Column()
   resetPasswordToken: string;
 
-  @Prop({
-    default: new Date(),
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
 
-  @Prop()
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
+  updatedAt: Date;
+
+  @Column()
   image: string;
 
-  @Prop()
+  @Column()
   introduction: string;
 
-  @Prop()
+  @Column()
   phone: string;
 
-  @Prop()
+  @Column()
   profession: string;
 
-  @Prop()
+  @Column()
   professionalLicense: string;
 
-  @Prop()
+  @Column()
   professionalLicenseState: string;
 
-  @Prop()
+  @Column()
   professionalLicenseImage: string;
 
-  @Prop()
-  professionalVerifield: boolean;
+  @Column()
+  professionalVerifiedAt: Date;
 
-  @Prop()
-  professionalVerifieldAt: Date;
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.PATIENT,
+  })
+  role: Role;
 
-  @Prop()
-  isProfessional: boolean;
-
-  @Prop()
-  isAdmin: boolean;
-
-  @Prop()
-  doctor: string;
-
-  @Prop()
+  @Column()
   height: number;
 
-  @Prop()
+  @Column()
   weight: number;
 
-  @Prop()
+  @Column()
   address: string;
 
-  @Prop()
+  @Column()
   addressNumber: string;
 
-  @Prop()
+  @Column()
   addressComplement: string;
 
-  @Prop()
+  @Column()
   addressNeighborhood: string;
 
-  @Prop()
+  @Column()
   addressCity: string;
 
-  @Prop()
+  @Column()
   addressState: string;
 
-  @Prop()
+  @Column()
   addressCountry: string;
 
-  @Prop()
+  @Column()
   zipCode: string;
 
-  @Prop()
+  @Column()
   birthDate: string;
 
-  @Prop()
-  patients: Patient[];
+  @OneToMany(() => Exercise, (exercise) => exercise.id)
+  favoriteExercises: Exercise[];
 
-  @Prop()
-  favoriteExercises: string[];
-
-  @Prop()
+  @OneToMany(() => Routine, (routine) => routine.user, {
+    eager: true,
+  })
   routines: Routine[];
+
+  @OneToMany(() => User, (user) => user.id)
+  patients: User[];
+
+  @OneToMany(() => Appointment, (appointment) => appointment.professional)
+  professionalAppointments: Appointment[];
 }
 
-export const UserSchema = SchemaFactory.createForClass(User);
+export enum FrequencyType {
+  DAY = 'day',
+  WEEK = 'week',
+  MONTH = 'month',
+}
+
+export enum PeriodType {
+  MORNING = 'morning',
+  AFTERNOON = 'afternoon',
+  NIGHT = 'night',
+}
+
+@Entity()
+export class Routine {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn()
+  professional: User;
+
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn()
+  user: User;
+
+  @ManyToOne(() => Exercise, (exercise) => exercise.id)
+  @JoinColumn()
+  exercise: Exercise;
+
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
+  updatedAt: Date;
+
+  @Column()
+  description: string;
+
+  @Column()
+  frequency: number;
+
+  @Column({
+    type: 'enum',
+    enum: FrequencyType,
+    default: FrequencyType.DAY,
+  })
+  frequencyType: FrequencyType;
+
+  @Column()
+  repetitions: number;
+
+  @Column()
+  series: number;
+
+  @Column({
+    type: 'enum',
+    enum: PeriodType,
+    default: PeriodType.MORNING,
+  })
+  period: PeriodType;
+
+  @OneToMany(() => Activity, (activity) => activity, {
+    eager: true,
+  })
+  activities: Activity[];
+}
+
+@Entity()
+export class Activity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => Routine, (routine) => routine.id)
+  @JoinColumn()
+  routine: Routine;
+
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
+
+  @Column()
+  comments: string;
+
+  @Column()
+  painLevel: number;
+
+  @Column()
+  effortLevel: number;
+}

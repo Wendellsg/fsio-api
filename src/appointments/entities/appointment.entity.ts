@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { User } from 'src/users/entities/user.entity';
 
 export type TAppointment = {
   _id: string;
@@ -31,10 +32,10 @@ export class Appointment {
   _id: string;
 
   @Prop()
-  patientId: string;
+  patient: User;
 
   @Prop()
-  professionalId: string;
+  professional: User;
 
   @Prop()
   startDate: string;

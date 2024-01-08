@@ -34,7 +34,7 @@ export class EvolutionsController {
   @Get('doctor')
   findByDoctor(@Request() request) {
     const doctorId = request.user.id;
-    return this.evolutionsService.findByDoctor(doctorId);
+    return this.evolutionsService.findByProfessional(doctorId);
   }
 
   @Get(':id')

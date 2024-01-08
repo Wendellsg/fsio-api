@@ -1,10 +1,12 @@
+import { FrequencyType, PeriodType } from '../entities/user.entity';
+
 export class CreateRoutineDto {
-  exerciseId: string;
   description: string;
   frequency: number;
-  frequencyType: string;
+  frequencyType: FrequencyType;
   repetitions: number;
   series: number;
-  period: string;
-  professionalId?: string;
+  period: PeriodType;
+  exerciseId: string;
+  professionalId: string;
 }
