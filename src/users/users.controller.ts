@@ -10,31 +10,34 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { Role, User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN, Role.PROFESSIONAL)
+  @UseGuards(AuthGuard)
   @Post('patients')
   createPatient(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createByDoctor(createUserDto);
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.PROFESSIONAL)
+  @UseGuards(AuthGuard)
   @Get('patients/:id')
   getPatient(@Param('id') id: string) {
     return this.usersService.getPatient(id);
@@ -94,7 +97,8 @@ export class UsersController {
     );
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Get()
   findAll() {
     return this.usersService.findAll();
@@ -168,12 +172,14 @@ export class UsersController {
     return this.usersService.update(request.user.id, updateUserDto);
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Patch(':id')
   updateAdmin(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);

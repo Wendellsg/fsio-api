@@ -3,7 +3,8 @@ import { Exercise } from 'src/exercises/entities/exercise.entity';
 import {
   Column,
   Entity,
-  ManyToOne,
+  JoinTable,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -161,11 +162,9 @@ export class User {
   })
   routines: Routine[];
 
-  @OneToMany(() => User, (user) => user.professional)
+  @ManyToMany(() => User)
+  @JoinTable()
   patients: User[];
-
-  @ManyToOne(() => User, (user) => user.patients)
-  professional: User;
 
   @OneToMany(() => Appointment, (appointment) => appointment.professional)
   professionalAppointments: Appointment[];

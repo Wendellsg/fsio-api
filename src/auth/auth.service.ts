@@ -17,8 +17,6 @@ export class AuthService {
     // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
     const user = await this.validateUser(email, password);
 
-    console.log(email, password, user);
-
     if (!user) {
       throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED);
     }
@@ -28,7 +26,7 @@ export class AuthService {
       {
         id: user.id,
         email: user.email,
-        isAdmin: user.isAdmin,
+        role: user.role,
       },
       {
         secret: process.env.JWT_SECRET,

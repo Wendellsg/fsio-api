@@ -1,4 +1,12 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -16,10 +24,10 @@ export class AuthController {
   ) {
     return this.authService.signUp(body);
   }
-  /* 
+
   @UseGuards(AuthGuard)
   @Get('me')
   me(@Request() request) {
     return this.authService.me(request.user.id);
-  } */
+  }
 }

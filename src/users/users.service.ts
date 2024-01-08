@@ -285,7 +285,7 @@ export class UsersService {
         );
 
       const payload = {
-        _id: user.id,
+        id: user.id,
         name: user.name,
         email: user.email,
         image: user.image,
@@ -315,18 +315,20 @@ export class UsersService {
         user: updatedUser,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async addPatient(id: string, patientId: string) {
     try {
-      const user = await this.userRepository.findOne({
-        where: {
-          id: id,
-        },
-        relations: ['patients'],
-      });
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.patients', 'patients')
+        .where('user.id = :id', { id: id })
+        .getOne();
+
+      console.log(user);
 
       if (!user) throw new HttpException('Usuário não encontrado', 404);
 
@@ -342,9 +344,10 @@ export class UsersService {
         },
       });
 
-      const updatedUser = await this.userRepository.update(id, {
-        patients: [...user.patients, patient],
-      });
+      if (!patient) throw new HttpException('Paciente não encontrado', 404);
+      user.patients.push(patient);
+
+      const updatedUser = await this.userRepository.save(user);
 
       return {
         message: 'User updated',
