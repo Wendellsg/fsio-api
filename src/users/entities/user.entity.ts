@@ -23,7 +23,10 @@ export class User {
   @Column()
   name: string;
 
-  @Column()
+  @Column({
+    unique: true,
+    nullable: false,
+  })
   email: string;
 
   @Column()

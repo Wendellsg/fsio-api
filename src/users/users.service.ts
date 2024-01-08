@@ -11,13 +11,13 @@ import { Activity, Routine, User } from './entities/user.entity';
 @Injectable()
 export class UsersService {
   constructor(
-    @Inject('USER_REPOSITORY')
+    @Inject('USERS_REPOSITORY')
     private userRepository: Repository<User>,
-    @Inject('EXERCISE_REPOSITORY')
+    @Inject('EXERCISES_REPOSITORY')
     private exerciseRepository: Repository<Exercise>,
-    @Inject('ROUTINE_REPOSITORY')
+    @Inject('ROUTINES_REPOSITORY')
     private routineRepository: Repository<Routine>,
-    @Inject('ACTIVITY_REPOSITORY')
+    @Inject('ACTIVITIES_REPOSITORY')
     private activityRepository: Repository<Activity>,
   ) {}
   async create(createUserDto: CreateUserDto) {

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabasesModule } from 'src/databases/databases.module';
+import { ExercisesProviders } from 'src/exercises/exercises.providers';
 import { UsersController } from './users.controller';
 import {
   ActivitiesProviders,
@@ -16,6 +17,7 @@ import { UsersService } from './users.service';
     ...UsersProviders,
     ...RoutinesProviders,
     ...ActivitiesProviders,
+    ...ExercisesProviders,
   ],
   exports: [UsersService],
 })

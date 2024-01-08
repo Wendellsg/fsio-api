@@ -8,7 +8,7 @@ import { Category, Exercise } from './entities/exercise.entity';
 @Injectable()
 export class ExercisesService {
   constructor(
-    @Inject('EXERCISE_REPOSITORY')
+    @Inject('EXERCISES_REPOSITORY')
     private exercisesRepository: Repository<Exercise>,
   ) {}
   async create(createExerciseDto: CreateExerciseDto) {

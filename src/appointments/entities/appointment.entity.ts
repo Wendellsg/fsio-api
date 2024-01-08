@@ -1,23 +1,12 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
 import { User } from 'src/users/entities/user.entity';
-
-export type TAppointment = {
-  _id: string;
-  createdAt: Date;
-  patientId: string;
-  professionalId: string;
-  startDate: string;
-  endDate: string;
-  status: AppointmentStatus;
-  comments: AppointmentComment[];
-};
-
-export type AppointmentComment = {
-  _id: string;
-  createdAt: Date;
-  comment: string;
-};
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 export enum AppointmentStatus {
   Scheduled = 'scheduled',
@@ -25,41 +14,53 @@ export enum AppointmentStatus {
   Done = 'done',
 }
 
-export type AppointmentDocument = HydratedDocument<Appointment>;
-
-@Schema()
+@Entity()
 export class Appointment {
-  _id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Prop()
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn()
   patient: User;
 
-  @Prop()
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn()
   professional: User;
 
-  @Prop()
+  @Column()
   startDate: string;
 
-  @Prop()
+  @Column()
   endDate: string;
 
-  @Prop()
+  @Column()
   status: AppointmentStatus;
 
-  @Prop()
+  @OneToMany(() => AppointmentComment, (comment) => comment.id)
   comments: AppointmentComment[];
 
-  @Prop({
-    type: Date,
-    default: Date.now,
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
 
-  @Prop({
-    type: Date,
-    default: Date.now,
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
 }
 
-export const AppointmentSchema = SchemaFactory.createForClass(Appointment);
+@Entity()
+export class AppointmentComment {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  createdAt: Date;
+
+  @Column()
+  comment: string;
+}

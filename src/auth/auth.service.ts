@@ -1,18 +1,16 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcrypt';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
-
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    @InjectModel(User.name) private userModel: Model<User>,
+    @Inject('USERS_REPOSITORY') private usersRepository: Repository<User>,
   ) {}
 
   async login(email: string, password: string): Promise<string> {
@@ -39,7 +37,9 @@ export class AuthService {
   }
 
   private async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.userModel.findOne({ email });
+    const user = await this.usersRepository.findOne({
+      where: { email },
+    });
 
     if (!user) {
       throw new HttpException(
@@ -57,11 +57,6 @@ export class AuthService {
         },
         HttpStatus.UNAUTHORIZED,
       );
-    }
-
-    if (user && (await compare(password, user.password))) {
-      // Retorna o usuário se válido
-      return user;
     }
 
     return null;

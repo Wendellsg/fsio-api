@@ -1,6 +1,6 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { User } from 'src/users/entities/user.entity';
+import { In, Repository } from 'typeorm';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { Appointment } from './entities/appointment.entity';
@@ -8,16 +8,38 @@ import { Appointment } from './entities/appointment.entity';
 @Injectable()
 export class AppointmentsService {
   constructor(
-    @InjectModel(Appointment.name)
-    private readonly appointmentModel: Model<Appointment>,
+    @Inject('APPOINTMENTS_REPOSITORY')
+    private appointmentRepository: Repository<Appointment>,
+    @Inject('USERS_REPOSITORY')
+    private userRepository: Repository<User>,
   ) {}
 
   async create(createAppointmentDto: CreateAppointmentDto) {
     try {
-      const appointment = await this.appointmentModel.create(
-        createAppointmentDto,
-      );
-      return appointment;
+      const professional = await this.userRepository.findOne({
+        where: { id: createAppointmentDto.professionalId },
+      });
+
+      if (!professional) {
+        throw new HttpException('Profissional não encontrado', 404);
+      }
+
+      const patient = await this.userRepository.findOne({
+        where: { id: createAppointmentDto.patientId },
+      });
+
+      if (!patient) {
+        throw new HttpException('Paciente não encontrado', 404);
+      }
+
+      const newAppointment = this.appointmentRepository.create({
+        professional,
+        patient,
+        startDate: createAppointmentDto.startDate,
+        endDate: createAppointmentDto.endDate,
+        status: createAppointmentDto.status,
+      });
+      return await this.appointmentRepository.save(newAppointment);
     } catch (error) {
       throw new HttpException('Erro ao criar agendamento', error.status || 500);
     }
@@ -27,9 +49,11 @@ export class AppointmentsService {
     return `This action returns all appointments`;
   }
 
-  async findByDoctor(doctorId: string) {
+  async findByProfessional(doctorId: string) {
     try {
-      return await this.appointmentModel.find({ professionalId: doctorId });
+      return await this.appointmentRepository.find({
+        where: { professional: { id: In([doctorId]) } },
+      });
     } catch (error) {
       throw new HttpException(
         'Erro ao buscar agendamentos',
@@ -40,7 +64,11 @@ export class AppointmentsService {
 
   async findByPatient(patientId: string) {
     try {
-      return await this.appointmentModel.find({ patientId: patientId });
+      return await this.appointmentRepository.find({
+        where: {
+          patient: { id: In([patientId]) },
+        },
+      });
     } catch (error) {
       throw new HttpException(
         'Erro ao buscar agendamentos',
@@ -63,23 +91,23 @@ export class AppointmentsService {
         throw new HttpException('Não autorizado', 401);
       }
 
-      return await this.appointmentModel.findByIdAndUpdate(
-        id,
-        updateAppointmentDto,
-        { new: true },
-      );
+      return await this.appointmentRepository.update(id, updateAppointmentDto);
     } catch (error) {}
   }
 
   async remove(id: string, user: any) {
     try {
-      const appointment = await this.appointmentModel.findById(id);
+      const appointment = await this.appointmentRepository.findOne({
+        where: {
+          id: id,
+        },
+      });
 
-      if (appointment.professionalId !== user.id) {
+      if (!appointment || appointment.professional.id !== user.id) {
         throw new HttpException('Não autorizado', 401);
       }
 
-      await this.appointmentModel.findByIdAndDelete(id);
+      await this.appointmentRepository.delete(id);
 
       return {
         message: 'Agendamento removido com sucesso',

@@ -12,6 +12,7 @@ import {
 import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { Category } from './entities/exercise.entity';
 import { ExercisesService } from './exercises.service';
 
 @Controller('exercises')
@@ -27,7 +28,7 @@ export class ExercisesController {
   @Get()
   findAll(
     @Query('search') search: string,
-    @Query('category') category: string,
+    @Query('category') category: Category,
   ) {
     return this.exercisesService.findAll(search, category);
   }

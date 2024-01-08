@@ -37,7 +37,7 @@ export class AppointmentsController {
   @Get('doctor')
   findByDoctor(@Request() request) {
     const doctorId = request.user.id;
-    return this.appointmentsService.findByDoctor(doctorId);
+    return this.appointmentsService.findByProfessional(doctorId);
   }
 
   @Get(':id')
