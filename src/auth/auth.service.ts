@@ -17,8 +17,10 @@ export class AuthService {
     // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
     const user = await this.validateUser(email, password);
 
+    console.log(email, password, user);
+
     if (!user) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED);
     }
 
     // Gerar um token JWT
@@ -45,7 +47,6 @@ export class AuthService {
     password: string;
     name: string;
   }) {
-    // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
     return await this.usersService.create({
       email,
       password,
@@ -67,7 +68,9 @@ export class AuthService {
       );
     }
 
-    if (!(await compare(password, user.password))) {
+    const isPasswordValid = await compare(password, user.password);
+
+    if (!isPasswordValid) {
       throw new HttpException(
         {
           message: 'Senha incorreta',
@@ -76,11 +79,11 @@ export class AuthService {
       );
     }
 
-    return null;
+    return user;
   }
 
-  /*  async me(id: string) {
+  async me(id: string) {
     const user = await this.usersService.findOne(id);
     return user;
-  } */
+  }
 }

@@ -2,7 +2,10 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Exercise } from 'src/exercises/entities/exercise.entity';
 import { Repository } from 'typeorm';
+import { CreateActivityDto } from './dto/create-activity.dto';
+import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { Activity } from './entities/activity.entity';
 import { Routine } from './entities/routine.entity';
 import { User } from './entities/user.entity';
@@ -74,7 +77,7 @@ export class UsersService {
     }
   }
 
-  /*  async createByDoctor(createUserDto: CreateUserDto) {
+  async createByDoctor(createUserDto: CreateUserDto) {
     if (!createUserDto.email || !createUserDto.name) {
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
     }
@@ -534,5 +537,5 @@ export class UsersService {
 
   remove(id: string) {
     return `This action removes a #${id} user`;
-  } */
+  }
 }
