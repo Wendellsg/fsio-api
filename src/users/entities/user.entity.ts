@@ -3,11 +3,11 @@ import { Exercise } from 'src/exercises/entities/exercise.entity';
 import {
   Column,
   Entity,
-  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Routine } from './routine.entity';
 
 export enum Role {
   PATIENT = 'patient',
@@ -32,7 +32,9 @@ export class User {
   @Column()
   password: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   resetPasswordToken: string;
 
   @Column({
@@ -48,28 +50,44 @@ export class User {
   })
   updatedAt: Date;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   image: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   introduction: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   phone: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   profession: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   professionalLicense: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   professionalLicenseState: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   professionalLicenseImage: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   professionalVerifiedAt: Date;
 
   @Column({
@@ -79,37 +97,59 @@ export class User {
   })
   role: Role;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   height: number;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   weight: number;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   address: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   addressNumber: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   addressComplement: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   addressNeighborhood: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   addressCity: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   addressState: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   addressCountry: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   zipCode: string;
 
-  @Column()
+  @Column({
+    nullable: true,
+  })
   birthDate: string;
 
   @OneToMany(() => Exercise, (exercise) => exercise.id)
@@ -117,111 +157,19 @@ export class User {
 
   @OneToMany(() => Routine, (routine) => routine.user, {
     eager: true,
+    nullable: true,
   })
   routines: Routine[];
 
-  @OneToMany(() => User, (user) => user.id)
+  @OneToMany(() => User, (user) => user.professional)
   patients: User[];
+
+  @ManyToOne(() => User, (user) => user.patients)
+  professional: User;
 
   @OneToMany(() => Appointment, (appointment) => appointment.professional)
   professionalAppointments: Appointment[];
-}
 
-export enum FrequencyType {
-  DAY = 'day',
-  WEEK = 'week',
-  MONTH = 'month',
-}
-
-export enum PeriodType {
-  MORNING = 'morning',
-  AFTERNOON = 'afternoon',
-  NIGHT = 'night',
-}
-
-@Entity()
-export class Routine {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn()
-  professional: User;
-
-  @ManyToOne(() => User, (user) => user.id)
-  @JoinColumn()
-  user: User;
-
-  @ManyToOne(() => Exercise, (exercise) => exercise.id)
-  @JoinColumn()
-  exercise: Exercise;
-
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createdAt: Date;
-
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt: Date;
-
-  @Column()
-  description: string;
-
-  @Column()
-  frequency: number;
-
-  @Column({
-    type: 'enum',
-    enum: FrequencyType,
-    default: FrequencyType.DAY,
-  })
-  frequencyType: FrequencyType;
-
-  @Column()
-  repetitions: number;
-
-  @Column()
-  series: number;
-
-  @Column({
-    type: 'enum',
-    enum: PeriodType,
-    default: PeriodType.MORNING,
-  })
-  period: PeriodType;
-
-  @OneToMany(() => Activity, (activity) => activity, {
-    eager: true,
-  })
-  activities: Activity[];
-}
-
-@Entity()
-export class Activity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @ManyToOne(() => Routine, (routine) => routine.id)
-  @JoinColumn()
-  routine: Routine;
-
-  @Column({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createdAt: Date;
-
-  @Column()
-  comments: string;
-
-  @Column()
-  painLevel: number;
-
-  @Column()
-  effortLevel: number;
+  @OneToMany(() => Appointment, (appointment) => appointment.patient)
+  appointments: Appointment[];
 }

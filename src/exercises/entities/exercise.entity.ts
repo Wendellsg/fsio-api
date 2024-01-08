@@ -21,6 +21,10 @@ export class Exercise {
   @Column({ nullable: false })
   description: string;
 
+  /*  @ManyToOne(() => User, (user) => user.favoriteExercises)
+  @JoinColumn()
+  professionals: User[]; */
+
   @Column({
     type: 'enum',
     enum: Category,

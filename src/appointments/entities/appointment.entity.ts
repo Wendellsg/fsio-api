@@ -19,11 +19,11 @@ export class Appointment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.appointments)
   @JoinColumn()
   patient: User;
 
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.professionalAppointments)
   @JoinColumn()
   professional: User;
 

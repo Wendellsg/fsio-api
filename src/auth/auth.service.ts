@@ -36,6 +36,23 @@ export class AuthService {
     return token;
   }
 
+  async signUp({
+    email,
+    password,
+    name,
+  }: {
+    email: string;
+    password: string;
+    name: string;
+  }) {
+    // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
+    return await this.usersService.create({
+      email,
+      password,
+      name,
+    });
+  }
+
   private async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({
       where: { email },
@@ -62,8 +79,8 @@ export class AuthService {
     return null;
   }
 
-  async me(id: string) {
+  /*  async me(id: string) {
     const user = await this.usersService.findOne(id);
     return user;
-  }
+  } */
 }

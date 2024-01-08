@@ -1,21 +1,6 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpException,
-  Param,
-  Patch,
-  Post,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
-import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
-import { CreateActivityDto } from './dto/create-activity.dto';
-import { CreateRoutineDto } from './dto/create-routine-dto';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { AdminAuthGuard } from 'src/auth/auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -27,7 +12,7 @@ export class UsersController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-
+  /* 
   @UseGuards(AdminAuthGuard)
   @Post('patients')
   createPatient(@Body() createUserDto: CreateUserDto) {
@@ -177,5 +162,5 @@ export class UsersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
-  }
+  } */
 }

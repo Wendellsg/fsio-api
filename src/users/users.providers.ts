@@ -1,5 +1,7 @@
 import { DataSource } from 'typeorm';
-import { Activity, Routine, User } from './entities/user.entity';
+import { Activity } from './entities/activity.entity';
+import { Routine } from './entities/routine.entity';
+import { User } from './entities/user.entity';
 
 export const UsersProviders = [
   {

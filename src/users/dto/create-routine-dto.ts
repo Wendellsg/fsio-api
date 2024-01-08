@@ -1,4 +1,4 @@
-import { FrequencyType, PeriodType } from '../entities/user.entity';
+import { FrequencyType, PeriodType } from '../entities/routine.entity';
 
 export class CreateRoutineDto {
   description: string;
