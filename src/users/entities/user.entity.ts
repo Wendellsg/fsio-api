@@ -162,13 +162,17 @@ export class User {
   })
   routines: Routine[];
 
-  @ManyToMany(() => User)
+  @ManyToMany(() => User, (user) => user.professionals)
   @JoinTable()
   patients: User[];
 
-  @OneToMany(() => Appointment, (appointment) => appointment.professional)
-  professionalAppointments: Appointment[];
+  @ManyToMany(() => User, (user) => user.patients)
+  @JoinTable()
+  professionals: User[];
 
   @OneToMany(() => Appointment, (appointment) => appointment.patient)
   appointments: Appointment[];
+
+  @OneToMany(() => Appointment, (appointment) => appointment.professional)
+  professionalAppointments: Appointment[];
 }

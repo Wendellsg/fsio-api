@@ -68,6 +68,12 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
+  @Get('professionals')
+  findUserProfessionals(@Request() request) {
+    return this.usersService.findUserProfessionals(request.user.id);
+  }
+
+  @UseGuards(AuthGuard)
   @Post('favorite-exercises')
   addFavoriteExercise(
     @Request() request,
@@ -111,7 +117,7 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete('patient/:id')
+  @Delete('patients/:id')
   removePatient(@Request() request, @Param('id') id: string) {
     return this.usersService.removePatient(request.user.id, id);
   }

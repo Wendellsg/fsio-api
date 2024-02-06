@@ -40,6 +40,13 @@ export class AppointmentsController {
     return this.appointmentsService.findByProfessional(doctorId);
   }
 
+  @UseGuards(AuthGuard)
+  @Get('patient')
+  findByPatient(@Request() request) {
+    const patientId = request.user.id;
+    return this.appointmentsService.findByPatient(patientId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.appointmentsService.findOne(id);

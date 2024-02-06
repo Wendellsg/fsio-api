@@ -13,7 +13,13 @@ export class AuthService {
     @Inject('USERS_REPOSITORY') private usersRepository: Repository<User>,
   ) {}
 
-  async login(email: string, password: string): Promise<string> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{
+    token: string;
+    user: { id: string; email: string; role: string };
+  }> {
     // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
     const user = await this.validateUser(email, password);
 
@@ -33,7 +39,7 @@ export class AuthService {
       },
     );
 
-    return token;
+    return { token, user: { id: user.id, email: user.email, role: user.role } };
   }
 
   async signUp({

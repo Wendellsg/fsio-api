@@ -53,6 +53,22 @@ export class AppointmentsService {
     try {
       return await this.appointmentRepository.find({
         where: { professional: { id: In([doctorId]) } },
+        select: {
+          patient: {
+            email: true,
+            id: true,
+            name: true,
+            image: true,
+          },
+          comments: true,
+          endDate: true,
+          id: true,
+          startDate: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        relations: ['patient'],
       });
     } catch (error) {
       throw new HttpException(
@@ -65,9 +81,23 @@ export class AppointmentsService {
   async findByPatient(patientId: string) {
     try {
       return await this.appointmentRepository.find({
-        where: {
-          patient: { id: In([patientId]) },
+        where: { patient: { id: In([patientId]) } },
+        select: {
+          professional: {
+            email: true,
+            id: true,
+            name: true,
+            image: true,
+          },
+          comments: true,
+          endDate: true,
+          id: true,
+          startDate: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
         },
+        relations: ['professional'],
       });
     } catch (error) {
       throw new HttpException(

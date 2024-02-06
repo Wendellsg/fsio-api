@@ -228,6 +228,40 @@ export class UsersService {
     }
   }
 
+  async findUserProfessionals(id: string) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
+        },
+        select: {
+          professionals: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        relations: ['professionals'],
+      });
+
+      if (!user) throw new HttpException('Usuário não encontrado', 404);
+
+      return user.professionals;
+    } catch (error) {
+      console.log(error);
+
+      if (error.status === 404) throw error;
+
+      throw new HttpException(
+        {
+          message: 'Erro ao buscar usuário',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
   async getPatient(patientId: string) {
     try {
       if (!patientId || patientId === 'undefined')
@@ -322,13 +356,12 @@ export class UsersService {
 
   async addPatient(id: string, patientId: string) {
     try {
-      const user = await this.userRepository
-        .createQueryBuilder('user')
-        .leftJoinAndSelect('user.patients', 'patients')
-        .where('user.id = :id', { id: id })
-        .getOne();
-
-      console.log(user);
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
+        },
+        relations: ['patients'],
+      });
 
       if (!user) throw new HttpException('Usuário não encontrado', 404);
 
@@ -342,6 +375,7 @@ export class UsersService {
         where: {
           id: patientId,
         },
+        relations: ['professionals'],
       });
 
       if (!patient) throw new HttpException('Paciente não encontrado', 404);
@@ -360,17 +394,34 @@ export class UsersService {
 
   async removePatient(id: string, patientId: string) {
     try {
-      const profession = await this.userRepository.findOne({
+      // Carregar o usuário com seus pacientes
+      const user = await this.userRepository.findOne({
         where: {
           id: id,
         },
+        relations: ['patients'],
       });
 
-      const updatedUser = await this.userRepository.update(id, {
-        patients: profession.patients.filter(
-          (patient) => patient.id !== patientId,
-        ),
-      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Encontrar o paciente que precisa ser removido
+      const patientToRemove = user.patients.find(
+        (patient) => patient.id === patientId,
+      );
+
+      if (!patientToRemove) {
+        throw new Error('Patient not found');
+      }
+
+      // Remover o paciente da lista de pacientes
+      user.patients = user.patients.filter(
+        (patient) => patient.id !== patientId,
+      );
+
+      // Salvar o usuário
+      const updatedUser = await this.userRepository.save(user);
 
       return {
         message: 'User updated',
