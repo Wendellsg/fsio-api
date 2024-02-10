@@ -171,6 +171,9 @@ export class UsersService {
       });
 
       delete user.password;
+      delete user.patients;
+      delete user.resetPasswordToken;
+      delete user.routines;
 
       if (!user)
         return new HttpException(
@@ -535,6 +538,46 @@ export class UsersService {
       return {
         message: 'User updated',
       };
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getRoutines(userId: string) {
+    console.log('userId', userId);
+
+    try {
+      const routines = await this.routineRepository.find({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+        select: {
+          id: true,
+          description: true,
+          frequency: true,
+          frequencyType: true,
+          period: true,
+          repetitions: true,
+          series: true,
+          exercise: {
+            id: true,
+            name: true,
+            description: true,
+            image: true,
+          },
+          professional: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        relations: ['exercise', 'professional', 'activities'],
+      });
+
+      return routines;
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
