@@ -590,6 +590,7 @@ export class UsersService {
             id: true,
             name: true,
             description: true,
+            summary: true,
             image: true,
             video: true,
           },
@@ -650,8 +651,6 @@ export class UsersService {
         date: new Date(createActivityDto.date),
         routine,
       });
-
-      console.log('newActivity', newActivity);
 
       await this.activityRepository.save(newActivity);
 

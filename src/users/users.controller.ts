@@ -139,7 +139,6 @@ export class UsersController {
   @UseGuards(AuthGuard)
   @Get('/routines')
   getRoutine(@Request() request) {
-    console.log('getRoutine', request.id);
     return this.usersService.getRoutines(request.user.id);
   }
 
