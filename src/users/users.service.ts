@@ -7,7 +7,7 @@ import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Activity } from './entities/activity.entity';
-import { Routine } from './entities/routine.entity';
+import { FrequencyType, PeriodType, Routine } from './entities/routine.entity';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -211,15 +211,12 @@ export class UsersService {
 
       return user.patients.map((patient) => {
         delete patient.password;
-        delete patient.patients;
         delete patient.resetPasswordToken;
         delete patient.professionalLicense;
         delete patient.professionalLicenseImage;
         return patient;
       });
     } catch (error) {
-      console.log(error);
-
       if (error.status === 404) throw error;
 
       throw new HttpException(
@@ -278,16 +275,36 @@ export class UsersService {
         where: {
           id: patientId,
         },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          weight: true,
+          height: true,
+          routines: {
+            activities: true,
+            exercise: {
+              id: true,
+              name: true,
+              description: true,
+              image: true,
+            },
+            id: true,
+            description: true,
+            frequency: true,
+            frequencyType: true,
+            period: true,
+            repetitions: true,
+            series: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        relations: ['routines', 'routines.activities', 'routines.exercise'],
       });
 
       if (!user) throw new HttpException('Paciente não encontrado', 404);
-
-      delete user.password;
-      delete user.patients;
-      delete user.resetPasswordToken;
-      delete user.professionalLicense;
-      delete user.professionalLicenseImage;
-
       return user;
     } catch (error) {
       throw error;
@@ -527,8 +544,8 @@ export class UsersService {
         exercise,
         description: routine.description,
         frequency: routine.frequency,
-        frequencyType: routine.frequencyType,
-        period: routine.period,
+        frequencyType: FrequencyType[routine.frequencyType],
+        period: PeriodType[routine.period],
         repetitions: routine.repetitions,
         series: routine.series,
       });
@@ -539,6 +556,7 @@ export class UsersService {
         message: 'User updated',
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

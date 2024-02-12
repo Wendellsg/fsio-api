@@ -36,7 +36,7 @@ export class UsersController {
     return this.usersService.createByDoctor(createUserDto);
   }
 
-  @Roles(Role.PROFESSIONAL)
+  @Roles(Role.PROFESSIONAL, Role.ADMIN)
   @UseGuards(AuthGuard)
   @Get('patients/:id')
   getPatient(@Param('id') id: string) {
