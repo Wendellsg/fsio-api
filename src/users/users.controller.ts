@@ -161,7 +161,7 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('routines/:routineId/activity')
+  @Post('routines/:routineId/activities')
   createActivity(
     @Param('id') id: string,
     @Param('routineId') routineId: string,
@@ -172,6 +172,21 @@ export class UsersController {
       request.user.id,
       routineId,
       createActivityDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('routines/:routineId/activities/:activityId')
+  removeActivity(
+    @Param('id') id: string,
+    @Param('routineId') routineId: string,
+    @Param('activityId') activityId: string,
+    @Request() request,
+  ) {
+    return this.usersService.removeActivity(
+      request.user.id,
+      routineId,
+      activityId,
     );
   }
 

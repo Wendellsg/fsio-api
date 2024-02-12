@@ -25,4 +25,9 @@ export class Activity {
 
   @Column()
   effortLevel: number;
+
+  @Column({
+    type: 'timestamp',
+  })
+  date: Date;
 }

@@ -283,6 +283,9 @@ export class UsersService {
           weight: true,
           height: true,
           routines: {
+            professional: {
+              id: true,
+            },
             activities: true,
             exercise: {
               id: true,
@@ -301,7 +304,13 @@ export class UsersService {
             updatedAt: true,
           },
         },
-        relations: ['routines', 'routines.activities', 'routines.exercise'],
+        relations: [
+          'routines',
+          'routines.activities',
+          'routines.professional',
+          'routines.exercise',
+          'professionals',
+        ],
       });
 
       if (!user) throw new HttpException('Paciente não encontrado', 404);
@@ -562,8 +571,6 @@ export class UsersService {
   }
 
   async getRoutines(userId: string) {
-    console.log('userId', userId);
-
     try {
       const routines = await this.routineRepository.find({
         where: {
@@ -584,6 +591,7 @@ export class UsersService {
             name: true,
             description: true,
             image: true,
+            video: true,
           },
           professional: {
             id: true,
@@ -591,8 +599,11 @@ export class UsersService {
             email: true,
             image: true,
           },
+          user: {
+            id: true,
+          },
         },
-        relations: ['exercise', 'professional', 'activities'],
+        relations: ['exercise', 'professional', 'activities', 'user'],
       });
 
       return routines;
@@ -636,14 +647,44 @@ export class UsersService {
 
       const newActivity = this.activityRepository.create({
         ...createActivityDto,
+        date: new Date(createActivityDto.date),
         routine,
       });
+
+      console.log('newActivity', newActivity);
 
       await this.activityRepository.save(newActivity);
 
       return {
         message: 'User updated',
-        user: newActivity,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async removeActivity(id: string, routineId: string, activityId: string) {
+    try {
+      const activity = await this.activityRepository.findOne({
+        where: {
+          id: activityId,
+        },
+        relations: ['routine.user'],
+      });
+
+      if (!activity) throw new HttpException('Atividade não encontrada', 404);
+
+      if (activity.routine.user.id !== id)
+        throw new HttpException(
+          'Você não tem permissão para remover esta atividade',
+          400,
+        );
+
+      await this.activityRepository.delete(activityId);
+
+      return {
+        message: 'User updated',
       };
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
