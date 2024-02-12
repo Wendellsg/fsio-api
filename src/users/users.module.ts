@@ -1,22 +1,24 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import {
-  Exercise,
-  ExerciseSchema,
-} from 'src/exercises/entities/exercise.entity';
-import { User, UserSchema } from './entities/user.entity';
+import { DatabasesModule } from 'src/databases/databases.module';
+import { ExercisesProviders } from 'src/exercises/exercises.providers';
 import { UsersController } from './users.controller';
+import {
+  ActivitiesProviders,
+  RoutinesProviders,
+  UsersProviders,
+} from './users.providers';
 import { UsersService } from './users.service';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    MongooseModule.forFeature([
-      { name: Exercise.name, schema: ExerciseSchema },
-    ]),
-  ],
+  imports: [DatabasesModule],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [
+    UsersService,
+    ...UsersProviders,
+    ...RoutinesProviders,
+    ...ActivitiesProviders,
+    ...ExercisesProviders,
+  ],
   exports: [UsersService],
 })
 export class UsersModule {}

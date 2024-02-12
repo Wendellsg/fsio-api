@@ -1,10 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
+  Post,
   Request,
   UseGuards,
-  Body,
-  Post,
 } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
@@ -16,6 +16,13 @@ export class AuthController {
   @Post('login')
   async login(@Body() body: { email: string; password: string }) {
     return this.authService.login(body.email, body.password);
+  }
+
+  @Post('sign-up')
+  async signUp(
+    @Body() body: { email: string; password: string; name: string },
+  ) {
+    return this.authService.signUp(body);
   }
 
   @UseGuards(AuthGuard)

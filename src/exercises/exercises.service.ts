@@ -1,22 +1,22 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../users/entities/user.entity';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+
+import { Repository } from 'typeorm';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
-import { Exercise, ExerciseDocument } from './entities/exercise.entity';
+import { Category, Exercise } from './entities/exercise.entity';
 
 @Injectable()
 export class ExercisesService {
   constructor(
-    @InjectModel(Exercise.name) private exerciseModel: Model<ExerciseDocument>,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @Inject('EXERCISES_REPOSITORY')
+    private exercisesRepository: Repository<Exercise>,
   ) {}
   async create(createExerciseDto: CreateExerciseDto) {
     try {
-      const exercise = new this.exerciseModel(createExerciseDto);
-      await exercise.save();
-      return exercise;
+      const newExercise = this.exercisesRepository.create({
+        ...createExerciseDto,
+      });
+      return await this.exercisesRepository.save(newExercise);
     } catch (error) {
       throw new HttpException(
         {
@@ -27,17 +27,27 @@ export class ExercisesService {
     }
   }
 
-  async findAll(search?: string, category?: string) {
-    const exercises = await this.exerciseModel.find({
-      name: { $regex: search || '', $options: 'i' },
-      category: { $regex: category || '', $options: 'i' },
-    });
+  async findAll(search?: string, category?: Category) {
+    const query = this.exercisesRepository.createQueryBuilder('exercise');
+
+    if (search) {
+      query.where('exercise.name ILIKE :search', { search: `%${search}%` });
+    }
+
+    if (category) {
+      query.andWhere('exercise.category = :category', { category });
+    }
+
+    const exercises = await query.getMany();
+
     return exercises;
   }
 
   findOne(id: string) {
     try {
-      return this.exerciseModel.findById(id);
+      return this.exercisesRepository.findOne({
+        where: { id },
+      });
     } catch (error) {
       throw new HttpException(
         {
@@ -50,7 +60,7 @@ export class ExercisesService {
 
   async update(id: string, updateExerciseDto: UpdateExerciseDto) {
     try {
-      await this.exerciseModel.findByIdAndUpdate(id, updateExerciseDto);
+      await this.exercisesRepository.update(id, updateExerciseDto);
     } catch (error) {
       throw new HttpException(
         {
@@ -63,14 +73,7 @@ export class ExercisesService {
 
   async remove(id: string) {
     try {
-      //Remove all user routines thas have this exercise
-
-      await this.userModel.updateMany(
-        {},
-        { $pull: { routines: { exerciseId: id } } },
-      );
-
-      await this.exerciseModel.findByIdAndDelete(id);
+      await this.exercisesRepository.delete(id);
     } catch (error) {
       throw new HttpException(
         {

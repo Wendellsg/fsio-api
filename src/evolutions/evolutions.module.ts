@@ -1,16 +1,12 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Evolution, EvolutionSchema } from './entities/evolution.entity';
+import { DatabasesModule } from 'src/databases/databases.module';
 import { EvolutionsController } from './evolutions.controller';
+import { EvolutionsProviders } from './evolutions.providers';
 import { EvolutionsService } from './evolutions.service';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: Evolution.name, schema: EvolutionSchema },
-    ]),
-  ],
+  imports: [DatabasesModule],
   controllers: [EvolutionsController],
-  providers: [EvolutionsService],
+  providers: [EvolutionsService, ...EvolutionsProviders],
 })
 export class EvolutionsModule {}

@@ -1,28 +1,36 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { ObjectId } from 'mongodb';
-import { Model } from 'mongoose';
 import { Exercise } from 'src/exercises/entities/exercise.entity';
+import { Repository } from 'typeorm';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Activity } from './entities/activity.entity';
+import { FrequencyType, PeriodType, Routine } from './entities/routine.entity';
 import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(Exercise.name) private exerciseModel: Model<Exercise>,
+    @Inject('USERS_REPOSITORY')
+    private userRepository: Repository<User>,
+    @Inject('EXERCISES_REPOSITORY')
+    private exerciseRepository: Repository<Exercise>,
+    @Inject('ROUTINES_REPOSITORY')
+    private routineRepository: Repository<Routine>,
+    @Inject('ACTIVITIES_REPOSITORY')
+    private activityRepository: Repository<Activity>,
   ) {}
   async create(createUserDto: CreateUserDto) {
     if (!createUserDto.email || !createUserDto.password) {
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
     }
 
-    const findUser = await this.userModel.findOne({
-      email: createUserDto.email,
+    const findUser = await this.userRepository.findOne({
+      where: {
+        email: createUserDto.email,
+      },
     });
 
     if (findUser) {
@@ -37,14 +45,16 @@ export class UsersService {
     try {
       const encripted = bcrypt.hashSync(createUserDto.password, 10);
 
-      const user = new this.userModel({
+      const user = this.userRepository.create({
         name: createUserDto.name,
         email: createUserDto.email,
         password: encripted,
       });
 
-      return user.save();
+      return await this.userRepository.save(user);
     } catch (error) {
+      console.log(error);
+
       if (error.code === 409) {
         throw new HttpException(
           {
@@ -72,8 +82,10 @@ export class UsersService {
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
     }
 
-    const findUser = await this.userModel.findOne({
-      email: createUserDto.email,
+    const findUser = await this.userRepository.findOne({
+      where: {
+        email: createUserDto.email,
+      },
     });
 
     if (findUser) {
@@ -90,13 +102,13 @@ export class UsersService {
 
       const encripted = bcrypt.hashSync(randomPassword, 10);
 
-      const user = new this.userModel({
+      const user = this.userRepository.create({
         name: createUserDto.name,
         email: createUserDto.email,
         password: encripted,
       });
 
-      return user.save();
+      return await this.userRepository.save(user);
     } catch (error) {
       if (error.code === 409) {
         throw new HttpException(
@@ -125,17 +137,9 @@ export class UsersService {
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
 
     try {
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        userId,
-        {
-          $set: {
-            image: profileImage,
-          },
-        },
-        {
-          new: true,
-        },
-      );
+      const updatedUser = await this.userRepository.update(userId, {
+        image: profileImage,
+      });
 
       return {
         message: 'User updated',
@@ -147,7 +151,7 @@ export class UsersService {
   }
 
   findAll() {
-    return this.userModel.find();
+    return this.userRepository.find();
   }
 
   async findOne(id: string) {
@@ -160,9 +164,16 @@ export class UsersService {
           HttpStatus.NOT_FOUND,
         );
 
-      const user = await this.userModel.findById(id);
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
+        },
+      });
 
       delete user.password;
+      delete user.patients;
+      delete user.resetPasswordToken;
+      delete user.routines;
 
       if (!user)
         return new HttpException(
@@ -189,23 +200,54 @@ export class UsersService {
 
   async findPatients(id: string) {
     try {
-      const user = await this.userModel.findById(id);
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
+        },
+        relations: ['patients'],
+      });
 
       if (!user) throw new HttpException('Usuário não encontrado', 404);
 
-      const patients = await Promise.all(
-        user.patients.map(async (patient) => {
-          const patientData = await this.userModel.findById(patient.userId);
-          return {
-            _id: patientData._id.toString(),
-            image: patientData.image,
-            name: patientData.name,
-            email: patientData.email,
-          };
-        }),
-      );
+      return user.patients.map((patient) => {
+        delete patient.password;
+        delete patient.resetPasswordToken;
+        delete patient.professionalLicense;
+        delete patient.professionalLicenseImage;
+        return patient;
+      });
+    } catch (error) {
+      if (error.status === 404) throw error;
 
-      return patients;
+      throw new HttpException(
+        {
+          message: 'Erro ao buscar usuário',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  async findUserProfessionals(id: string) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
+        },
+        select: {
+          professionals: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        relations: ['professionals'],
+      });
+
+      if (!user) throw new HttpException('Usuário não encontrado', 404);
+
+      return user.professionals;
     } catch (error) {
       console.log(error);
 
@@ -229,52 +271,61 @@ export class UsersService {
           },
           HttpStatus.NOT_FOUND,
         );
-      const user = await this.userModel.findById(patientId);
+      const user = await this.userRepository.findOne({
+        where: {
+          id: patientId,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          weight: true,
+          height: true,
+          routines: {
+            professional: {
+              id: true,
+            },
+            activities: true,
+            exercise: {
+              id: true,
+              name: true,
+              description: true,
+              image: true,
+            },
+            id: true,
+            description: true,
+            frequency: true,
+            frequencyType: true,
+            period: true,
+            repetitions: true,
+            series: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        relations: [
+          'routines',
+          'routines.activities',
+          'routines.professional',
+          'routines.exercise',
+          'professionals',
+        ],
+      });
 
       if (!user) throw new HttpException('Paciente não encontrado', 404);
-
-      delete user.password;
-      delete user.patients;
-      delete user.resetPasswordToken;
-      delete user.professionalLicense;
-      delete user.professionalLicenseImage;
-
       return user;
     } catch (error) {
       throw error;
     }
   }
 
-  async updatePatient(
-    userId: string,
-    patient: Partial<User>,
-    diagnosis: string,
-  ) {
+  async updatePatient(patient: Partial<User>) {
     try {
-      await this.userModel.findByIdAndUpdate(
-        patient._id,
-        {
-          $set: {
-            weight: patient.weight,
-            height: patient.height,
-          },
-        },
-        {
-          new: true,
-        },
-      );
-
-      await this.userModel.findOneAndUpdate(
-        {
-          _id: userId,
-          'patients.userId': patient._id,
-        },
-        {
-          $set: {
-            'patients.$.diagnosis': diagnosis,
-          },
-        },
-      );
+      await this.userRepository.update(patient.id, {
+        weight: patient.weight,
+        height: patient.height,
+      });
 
       return {
         message: 'User updated',
@@ -286,7 +337,7 @@ export class UsersService {
 
   async findByEmail(email: string) {
     try {
-      const user = await this.userModel.findOne({ email });
+      const user = await this.userRepository.findOne({ where: { email } });
 
       if (!user)
         throw new HttpException(
@@ -297,7 +348,7 @@ export class UsersService {
         );
 
       const payload = {
-        _id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         image: user.image,
@@ -320,48 +371,46 @@ export class UsersService {
     delete updateUserDto.email;
 
     try {
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        id,
-        updateUserDto,
-        {
-          new: true,
-        },
-      );
+      const updatedUser = await this.userRepository.update(id, updateUserDto);
 
       return {
         message: 'User updated',
         user: updatedUser,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async addPatient(id: string, patientId: string) {
     try {
-      const user = await this.userModel.findById(id);
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
+        },
+        relations: ['patients'],
+      });
 
       if (!user) throw new HttpException('Usuário não encontrado', 404);
 
-      if (user.patients.find((patient) => patient.userId === patientId))
+      if (user.patients.find((patient) => patient.id === patientId))
         throw new HttpException(
           'Este Paciente já está em sua lista de pacientes',
           HttpStatus.BAD_REQUEST,
         );
 
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        id,
-        {
-          $push: {
-            patients: {
-              userId: patientId,
-            },
-          },
+      const patient = await this.userRepository.findOne({
+        where: {
+          id: patientId,
         },
-        {
-          new: true,
-        },
-      );
+        relations: ['professionals'],
+      });
+
+      if (!patient) throw new HttpException('Paciente não encontrado', 404);
+      user.patients.push(patient);
+
+      const updatedUser = await this.userRepository.save(user);
 
       return {
         message: 'User updated',
@@ -374,19 +423,34 @@ export class UsersService {
 
   async removePatient(id: string, patientId: string) {
     try {
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        id,
-        {
-          $pull: {
-            patients: {
-              userId: patientId,
-            },
-          },
+      // Carregar o usuário com seus pacientes
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
         },
-        {
-          new: true,
-        },
+        relations: ['patients'],
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Encontrar o paciente que precisa ser removido
+      const patientToRemove = user.patients.find(
+        (patient) => patient.id === patientId,
       );
+
+      if (!patientToRemove) {
+        throw new Error('Patient not found');
+      }
+
+      // Remover o paciente da lista de pacientes
+      user.patients = user.patients.filter(
+        (patient) => patient.id !== patientId,
+      );
+
+      // Salvar o usuário
+      const updatedUser = await this.userRepository.save(user);
 
       return {
         message: 'User updated',
@@ -398,18 +462,28 @@ export class UsersService {
   }
 
   async addFavoriteExercise(id: string, exerciseId: string) {
-    try {
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        id,
-        {
-          $push: {
-            favoriteExercises: exerciseId,
-          },
-        },
-        {
-          new: true,
-        },
+    const user = await this.userRepository.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (user.favoriteExercises.find((exercise) => exercise.id === exerciseId))
+      throw new HttpException(
+        'Este exercício já está em sua lista de favoritos',
+        HttpStatus.BAD_REQUEST,
       );
+
+    const exercise = await this.exerciseRepository.findOne({
+      where: {
+        id: exerciseId,
+      },
+    });
+
+    try {
+      const updatedUser = await this.userRepository.update(id, {
+        favoriteExercises: [...user.favoriteExercises, exercise],
+      });
 
       return {
         message: 'User updated',
@@ -422,17 +496,17 @@ export class UsersService {
 
   async removeFavoriteExercise(id: string, exerciseId: string) {
     try {
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        id,
-        {
-          $pull: {
-            favoriteExercises: exerciseId,
-          },
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
         },
-        {
-          new: true,
-        },
-      );
+      });
+
+      const updatedUser = await this.userRepository.update(id, {
+        favoriteExercises: user.favoriteExercises.filter(
+          (exercise) => exercise.id !== exerciseId,
+        ),
+      });
 
       return {
         message: 'User updated',
@@ -449,26 +523,91 @@ export class UsersService {
     professionalId: string,
   ) {
     try {
-      const updatedUser = await this.userModel.findByIdAndUpdate(
-        id,
-        {
-          $push: {
-            routines: {
-              ...routine,
-              professionalId,
-              _id: new ObjectId().toString(),
-            },
-          },
+      const user = await this.userRepository.findOne({
+        where: {
+          id: id,
         },
-        {
-          new: true,
+      });
+      if (!user) throw new HttpException('Usuário não encontrado', 404);
+
+      const professional = await this.userRepository.findOne({
+        where: {
+          id: professionalId,
         },
-      );
+      });
+
+      if (!professional)
+        throw new HttpException('Profissional não encontrado', 404);
+
+      const exercise = await this.exerciseRepository.findOne({
+        where: {
+          id: routine.exerciseId,
+        },
+      });
+
+      if (!exercise) throw new HttpException('Exercício não encontrado', 404);
+
+      const newRoutine = this.routineRepository.create({
+        professional,
+        user,
+        exercise,
+        description: routine.description,
+        frequency: routine.frequency,
+        frequencyType: FrequencyType[routine.frequencyType],
+        period: PeriodType[routine.period],
+        repetitions: routine.repetitions,
+        series: routine.series,
+      });
+
+      await this.routineRepository.save(newRoutine);
 
       return {
         message: 'User updated',
-        user: updatedUser,
       };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getRoutines(userId: string) {
+    try {
+      const routines = await this.routineRepository.find({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+        select: {
+          id: true,
+          description: true,
+          frequency: true,
+          frequencyType: true,
+          period: true,
+          repetitions: true,
+          series: true,
+          exercise: {
+            id: true,
+            name: true,
+            description: true,
+            summary: true,
+            image: true,
+            video: true,
+          },
+          professional: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+          user: {
+            id: true,
+          },
+        },
+        relations: ['exercise', 'professional', 'activities', 'user'],
+      });
+
+      return routines;
     } catch (error) {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -480,23 +619,9 @@ export class UsersService {
     routine: CreateRoutineDto,
   ) {
     try {
-      const updatedUser = await this.userModel.findOneAndUpdate(
-        {
-          _id: id,
-          'routines._id': routineId,
-        },
-        {
-          $set: {
-            'routines.$': {
-              ...routine,
-              _id: routineId,
-            },
-          },
-        },
-        {
-          new: true,
-        },
-      );
+      const updatedUser = await this.routineRepository.update(routineId, {
+        ...routine,
+      });
 
       return {
         message: 'User updated',
@@ -513,89 +638,55 @@ export class UsersService {
     createActivityDto: CreateActivityDto,
   ) {
     try {
-      const updatedUser = await this.userModel.findOneAndUpdate(
-        {
-          _id: id,
-          'routines._id': routineId,
+      const routine = await this.routineRepository.findOne({
+        where: {
+          id: routineId,
         },
-        {
-          $push: {
-            'routines.$.activities': {
-              ...createActivityDto,
-              _id: new ObjectId().toString(),
-              createdAt: new Date(),
-            },
-          },
-        },
-        {
-          new: true,
-        },
-      );
+      });
+
+      if (!routine) throw new HttpException('Rotina não encontrada', 404);
+
+      const newActivity = this.activityRepository.create({
+        ...createActivityDto,
+        date: new Date(createActivityDto.date),
+        routine,
+      });
+
+      await this.activityRepository.save(newActivity);
 
       return {
         message: 'User updated',
-        user: updatedUser,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getActivities(professionalId: string) {
+  async removeActivity(id: string, routineId: string, activityId: string) {
     try {
-      const activities = await this.userModel.aggregate([
-        { $limit: 20 },
-        {
-          $match: {
-            'routines.professionalId': professionalId,
-          },
+      const activity = await this.activityRepository.findOne({
+        where: {
+          id: activityId,
         },
-        {
-          $unwind: '$routines',
-        },
-        {
-          $unwind: '$routines.activities',
-        },
-        {
-          $project: {
-            _id: '$routines.activities._id',
-            createdAt: '$routines.activities.createdAt',
-            routineId: '$routines._id',
-            patientId: '$_id',
-            exerciseId: '$routines.exerciseId',
-            patientName: '$name',
-            patientImage: '$image',
-            painLevel: '$routines.activities.painLevel',
-            effortLevel: '$routines.activities.effortLevel',
-            comments: '$routines.activities.comments',
-          },
-        },
-      ]);
-
-      const exercises = await this.exerciseModel.find(
-        {
-          _id: {
-            $in: activities.map((activity) => activity.exerciseId),
-          },
-        },
-        {
-          name: 1,
-          image: 1,
-        },
-      );
-
-      activities.forEach((activity) => {
-        const exercise = exercises.find(
-          (exercise) => exercise._id.toString() === activity.exerciseId,
-        );
-
-        activity.exerciseName = exercise.name;
-        activity.exerciseImage = exercise.image;
+        relations: ['routine.user'],
       });
 
-      return activities;
+      if (!activity) throw new HttpException('Atividade não encontrada', 404);
+
+      if (activity.routine.user.id !== id)
+        throw new HttpException(
+          'Você não tem permissão para remover esta atividade',
+          400,
+        );
+
+      await this.activityRepository.delete(activityId);
+
+      return {
+        message: 'User updated',
+      };
     } catch (error) {
-      throw error;
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

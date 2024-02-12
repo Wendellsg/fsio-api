@@ -10,31 +10,34 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { CreateRoutineDto } from './dto/create-routine-dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { Role, User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN, Role.PROFESSIONAL)
+  @UseGuards(AuthGuard)
   @Post('patients')
   createPatient(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createByDoctor(createUserDto);
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.PROFESSIONAL, Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Get('patients/:id')
   getPatient(@Param('id') id: string) {
     return this.usersService.getPatient(id);
@@ -55,17 +58,19 @@ export class UsersController {
       diagnosis: string;
     },
   ) {
-    return this.usersService.updatePatient(
-      request.user.id,
-      body.patient,
-      body.diagnosis,
-    );
+    return this.usersService.updatePatient(body.patient);
   }
 
   @UseGuards(AuthGuard)
   @Get('patients')
   findPatients(@Request() request) {
     return this.usersService.findPatients(request.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('professionals')
+  findUserProfessionals(@Request() request) {
+    return this.usersService.findUserProfessionals(request.user.id);
   }
 
   @UseGuards(AuthGuard)
@@ -98,7 +103,8 @@ export class UsersController {
     );
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Get()
   findAll() {
     return this.usersService.findAll();
@@ -111,7 +117,7 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete('patient/:id')
+  @Delete('patients/:id')
   removePatient(@Request() request, @Param('id') id: string) {
     return this.usersService.removePatient(request.user.id, id);
   }
@@ -128,6 +134,12 @@ export class UsersController {
       createRoutineDto,
       request.user.id,
     );
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/routines')
+  getRoutine(@Request() request) {
+    return this.usersService.getRoutines(request.user.id);
   }
 
   @UseGuards(AuthGuard)
@@ -148,7 +160,7 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('routines/:routineId/activity')
+  @Post('routines/:routineId/activities')
   createActivity(
     @Param('id') id: string,
     @Param('routineId') routineId: string,
@@ -163,9 +175,18 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('activities')
-  getActivities(@Request() request) {
-    return this.usersService.getActivities(request.user.id);
+  @Post('routines/:routineId/activities/:activityId')
+  removeActivity(
+    @Param('id') id: string,
+    @Param('routineId') routineId: string,
+    @Param('activityId') activityId: string,
+    @Request() request,
+  ) {
+    return this.usersService.removeActivity(
+      request.user.id,
+      routineId,
+      activityId,
+    );
   }
 
   @Get(':id')
@@ -178,12 +199,14 @@ export class UsersController {
     return this.usersService.update(request.user.id, updateUserDto);
   }
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Patch(':id')
   updateAdmin(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);

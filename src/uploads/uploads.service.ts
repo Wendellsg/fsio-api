@@ -18,8 +18,6 @@ export class UploadsService {
       throw new HttpException('Not Acceptable Extention', 406);
     }
 
-    console.log(folder);
-
     const key = `${folder}/${Date.now().toString()}.${
       createUploadDto.extention
     }`;

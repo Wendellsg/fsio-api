@@ -1,136 +1,178 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { Appointment } from 'src/appointments/entities/appointment.entity';
+import { Exercise } from 'src/exercises/entities/exercise.entity';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Routine } from './routine.entity';
 
-export type UserDocument = HydratedDocument<User>;
-
-export class Patient {
-  userId: string;
-  diagnosis: string;
-  email?: string;
-  name?: string;
-  image?: string;
+export enum Role {
+  PATIENT = 'patient',
+  PROFESSIONAL = 'professional',
+  ADMIN = 'admin',
 }
 
-export class Routine {
-  _id: string;
-  professionalId: string;
-  exerciseId: string;
-  createdAt: Date;
-  description: string;
-  frequency: number;
-  frequencyType: string;
-  repetitions: number;
-  series: number;
-  period: string;
-  activities?: Activity[];
-}
-
-export class Activity {
-  _id: string;
-  createdAt: Date;
-  comments: string;
-  painLevel: number;
-  effortLevel: number;
-}
-
-@Schema()
+@Entity()
 export class User {
-  _id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Prop()
+  @Column()
   name: string;
 
-  @Prop()
+  @Column({
+    unique: true,
+    nullable: false,
+  })
   email: string;
 
-  @Prop()
+  @Column()
   password: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   resetPasswordToken: string;
 
-  @Prop({
-    default: new Date(),
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt: Date;
 
-  @Prop()
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
+  updatedAt: Date;
+
+  @Column({
+    nullable: true,
+  })
   image: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   introduction: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   phone: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   profession: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   professionalLicense: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   professionalLicenseState: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   professionalLicenseImage: string;
 
-  @Prop()
-  professionalVerifield: boolean;
+  @Column({
+    nullable: true,
+  })
+  professionalVerifiedAt: Date;
 
-  @Prop()
-  professionalVerifieldAt: Date;
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.PATIENT,
+  })
+  role: Role;
 
-  @Prop()
-  isProfessional: boolean;
-
-  @Prop()
-  isAdmin: boolean;
-
-  @Prop()
-  doctor: string;
-
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   height: number;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   weight: number;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   address: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   addressNumber: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   addressComplement: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   addressNeighborhood: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   addressCity: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   addressState: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   addressCountry: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   zipCode: string;
 
-  @Prop()
+  @Column({
+    nullable: true,
+  })
   birthDate: string;
 
-  @Prop()
-  patients: Patient[];
+  @OneToMany(() => Exercise, (exercise) => exercise.id)
+  favoriteExercises: Exercise[];
 
-  @Prop()
-  favoriteExercises: string[];
-
-  @Prop()
+  @OneToMany(() => Routine, (routine) => routine.user, {
+    eager: true,
+    nullable: true,
+  })
   routines: Routine[];
-}
 
-export const UserSchema = SchemaFactory.createForClass(User);
+  @ManyToMany(() => User, (user) => user.professionals)
+  @JoinTable()
+  patients: User[];
+
+  @ManyToMany(() => User, (user) => user.patients)
+  @JoinTable()
+  professionals: User[];
+
+  @OneToMany(() => Appointment, (appointment) => appointment.patient)
+  appointments: Appointment[];
+
+  @OneToMany(() => Appointment, (appointment) => appointment.professional)
+  professionalAppointments: Appointment[];
+}

@@ -41,6 +41,5 @@ export const s3PreSignedUrl: (key: string) => Promise<string> = async (key) => {
   };
 
   const res = s3.getSignedUrlPromise('putObject', params);
-  console.log(await res);
   return res;
 };

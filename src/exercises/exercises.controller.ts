@@ -9,16 +9,19 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { AdminAuthGuard, AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
+import { Role } from 'src/users/entities/user.entity';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { Category } from './entities/exercise.entity';
 import { ExercisesService } from './exercises.service';
 
 @Controller('exercises')
 export class ExercisesController {
   constructor(private readonly exercisesService: ExercisesService) {}
 
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createExerciseDto: CreateExerciseDto) {
     return this.exercisesService.create(createExerciseDto);
@@ -27,7 +30,7 @@ export class ExercisesController {
   @Get()
   findAll(
     @Query('search') search: string,
-    @Query('category') category: string,
+    @Query('category') category: Category,
   ) {
     return this.exercisesService.findAll(search, category);
   }
@@ -36,7 +39,7 @@ export class ExercisesController {
   findOne(@Param('id') id: string) {
     return this.exercisesService.findOne(id);
   }
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -44,7 +47,8 @@ export class ExercisesController {
   ) {
     return this.exercisesService.update(id, updateExerciseDto);
   }
-  @UseGuards(AdminAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.exercisesService.remove(id);

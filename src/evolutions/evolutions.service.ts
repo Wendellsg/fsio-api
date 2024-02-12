@@ -1,6 +1,5 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { In, Repository } from 'typeorm';
 import { CreateEvolutionDto } from './dto/create-evolution.dto';
 import { UpdateEvolutionDto } from './dto/update-evolution.dto';
 import { Evolution } from './entities/evolution.entity';
@@ -8,14 +7,15 @@ import { Evolution } from './entities/evolution.entity';
 @Injectable()
 export class EvolutionsService {
   constructor(
-    @InjectModel(Evolution.name)
-    private readonly evolutionModel: Model<Evolution>,
+    @Inject('EVOLUTIONS_REPOSITORY')
+    private evolutionsRepository: Repository<Evolution>,
   ) {}
 
   async create(createEvolutionDto: CreateEvolutionDto) {
     try {
-      const evolution = await this.evolutionModel.create(createEvolutionDto);
-      return evolution;
+      const newEvolution = this.evolutionsRepository.create(createEvolutionDto);
+
+      return await this.evolutionsRepository.save(newEvolution);
     } catch (error) {
       throw new HttpException('Erro ao criar agendamento', error.status || 500);
     }
@@ -25,9 +25,13 @@ export class EvolutionsService {
     return `This action returns all evolutions`;
   }
 
-  async findByDoctor(doctorId: string) {
+  async findByProfessional(professionalId: string) {
     try {
-      return await this.evolutionModel.find({ professionalId: doctorId });
+      return await this.evolutionsRepository.find({
+        where: {
+          professional: { id: In([professionalId]) },
+        },
+      });
     } catch (error) {
       throw new HttpException(
         'Erro ao buscar agendamentos',
@@ -38,7 +42,11 @@ export class EvolutionsService {
 
   async findByPatient(patientId: string) {
     try {
-      return await this.evolutionModel.find({ patientId: patientId });
+      return await this.evolutionsRepository.find({
+        where: {
+          user: { id: In([patientId]) },
+        },
+      });
     } catch (error) {
       throw new HttpException(
         'Erro ao buscar agendamentos',
@@ -57,23 +65,23 @@ export class EvolutionsService {
         throw new HttpException('Não autorizado', 401);
       }
 
-      return await this.evolutionModel.findByIdAndUpdate(
-        id,
-        updateEvolutionDto,
-        { new: true },
-      );
+      return await this.evolutionsRepository.update(id, updateEvolutionDto);
     } catch (error) {}
   }
 
   async remove(id: string, user: any) {
     try {
-      const evolution = await this.evolutionModel.findById(id);
+      const evolution = await this.evolutionsRepository.findOne({
+        where: {
+          id: In([id]),
+        },
+      });
 
-      if (evolution.professionalId !== user.id) {
+      if (!evolution || evolution.professional.id !== user.id) {
         throw new HttpException('Não autorizado', 401);
       }
 
-      await this.evolutionModel.findByIdAndDelete(id);
+      await this.evolutionsRepository.delete(id);
 
       return {
         message: 'Agendamento removido com sucesso',

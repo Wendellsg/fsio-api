@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
+import { DatabasesModule } from './databases/databases.module';
+import { EvolutionsModule } from './evolutions/evolutions.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
-import { AppointmentsModule } from './appointments/appointments.module';
-import { EvolutionsModule } from './evolutions/evolutions.module';
 
 @Module({
   imports: [
@@ -22,19 +22,13 @@ import { EvolutionsModule } from './evolutions/evolutions.module';
       secret: process.env.JWT_KEY,
       signOptions: { expiresIn: '7d' },
     }),
-    MongooseModule.forRoot(
-      `mongodb+srv://${encodeURIComponent(
-        process.env.MONGO_DB_USER,
-      )}:${encodeURIComponent(process.env.MONGO_DB_PASSWORD)}${
-        process.env.MONGO_DB_HOST
-      }/${process.env.MONGO_DB_COLLECTION}?retryWrites=true&w=majority`,
-    ),
     AuthModule,
     ExercisesModule,
     UsersModule,
     UploadsModule,
     AppointmentsModule,
     EvolutionsModule,
+    DatabasesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
