@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -15,7 +16,6 @@ export class AuthService {
     password: string,
   ): Promise<{
     token: string;
-    user: { id: string; email: string; role: string };
   }> {
     // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
     const user = await this.validateUser(email, password);
@@ -24,19 +24,21 @@ export class AuthService {
       throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED);
     }
 
-    // Gerar um token JWT
-    const token = this.jwtService.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      {
-        secret: process.env.JWT_SECRET,
-      },
-    );
+    const payload = {
+      id: user.id,
+      email: user.email,
+      roles: user.roles,
+    };
 
-    return { token, user: { id: user.id, email: user.email, role: user.role } };
+    if (user.professional) {
+      payload['professionalId'] = user.professional.id;
+    }
+    // Gerar um token JWT
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET,
+    });
+
+    return { token };
   }
 
   async signUp({
@@ -74,10 +76,22 @@ export class AuthService {
     });
   }
 
-  private async validateUser(email: string, password: string): Promise<any> {
+  private async validateUser(
+    email: string,
+    password: string,
+  ): Promise<
+    User & {
+      professional?: {
+        id: string;
+      };
+    }
+  > {
     const user = await this.prisma.user.findUnique({
       where: {
         email,
+      },
+      include: {
+        professional: true,
       },
     });
 
