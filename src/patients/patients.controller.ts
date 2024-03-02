@@ -21,8 +21,15 @@ export class PatientsController {
   @Roles(UserRoleEnum.professional)
   @UseGuards(AuthGuard)
   @Post()
-  create(@Body('patientId') patientId: string, @Request() request) {
-    return this.patientsService.create(request.user.professionalId, patientId);
+  create(
+    @Body()
+    patient: {
+      name: string;
+      email: string;
+    },
+    @Request() request,
+  ) {
+    return this.patientsService.create(request.user.professionalId, patient);
   }
 
   @Roles(UserRoleEnum.professional)

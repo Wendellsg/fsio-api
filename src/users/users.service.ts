@@ -76,7 +76,7 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prisma.user.findUnique({
       where: { email },
       select: { id: true, name: true, email: true, image: true },
     });

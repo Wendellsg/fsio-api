@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -53,8 +54,8 @@ export class UsersController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('/by-email/:email')
-  findByEmail(@Param('email') email: string) {
+  @Get('/by-email')
+  findByEmail(@Query('email') email: string) {
     return this.usersService.findByEmail(email);
   }
 

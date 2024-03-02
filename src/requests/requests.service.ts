@@ -7,40 +7,17 @@ export class RequestsService {
   constructor(private prisma: PrismaService) {}
 
   async createRequest(patientId: string, professionalId: string) {
-    if (!patientId) {
+    if (!patientId || !professionalId) {
       throw new HttpException(
-        'Id do paciente não enviado',
+        'Corpos da requisição não enviado',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    const professional = await this.prisma?.professional.findUnique({
-      where: {
-        id: professionalId,
-      },
-    });
-
-    if (!professional) {
-      throw new HttpException(
-        'Profissional não encontrado',
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    const patient = await this.prisma?.user.findUnique({
-      where: {
-        id: patientId,
-      },
-    });
-
-    if (!patient) {
-      throw new HttpException('Paciente não encontrado', HttpStatus.NOT_FOUND);
-    }
-
     const existRequest = await this.prisma?.request.findFirst({
       where: {
-        userId: patient.id,
-        professionalId: professional.id,
+        userId: patientId,
+        professionalId: professionalId,
       },
     });
 
@@ -51,15 +28,17 @@ export class RequestsService {
     try {
       await this.prisma?.request.create({
         data: {
-          userId: patient.id,
-          professionalId: professional.id,
+          userId: patientId,
+          professionalId: professionalId,
         },
       });
 
-      return;
-      {
-      }
+      return {
+        message: 'Requisição criada com sucesso',
+      };
     } catch (error) {
+      console.log(error);
+
       throw new HttpException(
         'Erro ao criar requisição',
         HttpStatus.INTERNAL_SERVER_ERROR,

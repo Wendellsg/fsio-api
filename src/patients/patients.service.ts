@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { UserRoleEnum } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetPatientResponseDTO, UpdatePatientDto } from './dtos';
 
@@ -68,7 +69,55 @@ export class PatientsService {
     };
   }
 
-  async create(professionalId: string, patientId: string) {
+  async create(
+    professionalId: string,
+    newPatient: { name: string; email: string },
+  ) {
+    try {
+      const userExists = await this.prisma.user.findFirst({
+        where: {
+          email: newPatient.email,
+        },
+      });
+
+      if (userExists)
+        throw new HttpException(
+          'Usuário já cadastrado',
+          HttpStatus.BAD_REQUEST,
+        );
+
+      const patient = await this.prisma.user.create({
+        data: {
+          ...newPatient,
+          roles: [UserRoleEnum.patient],
+        },
+      });
+
+      await this.prisma.professional.update({
+        where: {
+          id: professionalId,
+        },
+        data: {
+          patients: {
+            connect: {
+              id: patient.id,
+            },
+          },
+        },
+      });
+
+      return {
+        message: 'Paciente criado com sucesso',
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Erro ao criar paciente',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async add(professionalId: string, patientId: string) {
     const professional = await this.prisma.professional.findFirst({
       where: {
         id: professionalId,
@@ -135,9 +184,6 @@ export class PatientsService {
         email: true,
       },
     });
-
-    console.log(patients);
-
     return patients;
   }
 
