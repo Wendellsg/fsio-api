@@ -6,19 +6,25 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class AppointmentsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAppointmentDto: Prisma.AppointmentCreateInput) {
+  async create(createAppointmentDto: Prisma.AppointmentUncheckedCreateInput) {
+    //Resolve time zone issue
+
+    const startDate = new Date(createAppointmentDto.startDate);
+
+    startDate.setHours(startDate.getHours() - 3);
+
+    createAppointmentDto.startDate = startDate;
+
+    const endDate = new Date(createAppointmentDto.endDate);
+
+    endDate.setHours(endDate.getHours() - 3);
+
+    createAppointmentDto.endDate = endDate;
+
     try {
       await this.prisma?.appointment.create({
         data: {
-          professional: {
-            connect: { id: createAppointmentDto.professional.connect.id },
-          },
-          patient: {
-            connect: { id: createAppointmentDto.patient.connect.id },
-          },
-          startDate: createAppointmentDto.startDate,
-          endDate: createAppointmentDto.endDate,
-          status: createAppointmentDto.status,
+          ...createAppointmentDto,
         },
       });
       return {
@@ -138,7 +144,7 @@ export class AppointmentsService {
   async update(
     id: string,
     professionalId: string,
-    updateAppointmentDto: Prisma.AppointmentUpdateInput,
+    updateAppointmentDto: Prisma.AppointmentUncheckedUpdateInput,
   ) {
     try {
       const appointment = await this.prisma?.appointment.findUnique({
@@ -154,11 +160,31 @@ export class AppointmentsService {
         );
       }
 
+      //Resolve time zone issue
+
+      const startDate = new Date(updateAppointmentDto.startDate as string);
+
+      startDate.setHours(startDate.getHours() - 3);
+
+      updateAppointmentDto.startDate = startDate;
+
+      const endDate = new Date(updateAppointmentDto.endDate as string);
+
+      endDate.setHours(endDate.getHours() - 3);
+
+      updateAppointmentDto.endDate = endDate;
+
       return await this.prisma?.appointment.update({
         where: { id },
-        data: updateAppointmentDto,
+        data: {
+          startDate: updateAppointmentDto.startDate,
+          endDate: updateAppointmentDto.endDate,
+          status: updateAppointmentDto.status,
+        },
       });
     } catch (error) {
+      console.log(error);
+
       throw new HttpException(
         {
           message: 'Erro ao atualizar agendamento',

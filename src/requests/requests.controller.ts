@@ -21,7 +21,6 @@ export class RequestsController {
   @UseGuards(AuthGuard)
   @Post()
   create(@Request() request, @Body('patientId') patientId: string) {
-    console.log('patientId', patientId);
     return this.requestsService.createRequest(
       patientId,
       request.user.professionalId,

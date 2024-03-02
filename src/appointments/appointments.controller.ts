@@ -24,13 +24,10 @@ export class AppointmentsController {
   @UseGuards(AuthGuard)
   @Post()
   create(
-    @Body() createAppointmentDto: Prisma.AppointmentCreateInput,
+    @Body() createAppointmentDto: Prisma.AppointmentUncheckedCreateInput,
     @Request() request,
   ) {
-    if (
-      request.user.professionalId !==
-      createAppointmentDto.professional.connect.id
-    ) {
+    if (request.user.professionalId !== createAppointmentDto.professionalId) {
       throw new HttpException(
         'Você não tem permissão para criar um agendamento para outro profissional',
         HttpStatus.FORBIDDEN,
@@ -76,7 +73,7 @@ export class AppointmentsController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateAppointmentDto: Prisma.AppointmentUpdateInput,
+    @Body() updateAppointmentDto: Prisma.AppointmentUncheckedUpdateInput,
     @Request() request,
   ) {
     return this.appointmentsService.update(

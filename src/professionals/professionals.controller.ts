@@ -13,4 +13,11 @@ export class ProfessionalsController {
   findAll(@Request() request) {
     return this.professionalsService.findAll(request.user.id);
   }
+
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
+  @Get('/me')
+  me(@Request() request) {
+    return this.professionalsService.me(request.user.professionalId);
+  }
 }
