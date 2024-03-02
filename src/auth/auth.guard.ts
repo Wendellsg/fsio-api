@@ -42,11 +42,11 @@ export class AuthGuard implements CanActivate {
         return true;
       }
 
-      if (requiredRoles) {
-        return requiredRoles.includes(payload.role);
-      }
+      const hasRole = requiredRoles.some((role) =>
+        payload.roles.includes(role),
+      );
 
-      return false;
+      return hasRole;
     } catch {
       throw new UnauthorizedException();
     }

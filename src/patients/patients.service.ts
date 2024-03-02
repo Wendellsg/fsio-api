@@ -1,10 +1,10 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UpdatePatientDto } from './dtos';
+import { GetPatientResponseDTO, UpdatePatientDto } from './dtos';
 
+@Injectable()
 export class PatientsService {
   constructor(private prisma: PrismaService) {}
-
   async findOne(patientId: string, professionalId: string) {
     const patient = await this.prisma.user.findFirst({
       where: {
@@ -118,7 +118,7 @@ export class PatientsService {
     };
   }
 
-  async findAll(professionalId: string) {
+  async findAll(professionalId: string): Promise<GetPatientResponseDTO> {
     const patients = await this.prisma?.user.findMany({
       where: {
         professionals: {
@@ -135,6 +135,8 @@ export class PatientsService {
         email: true,
       },
     });
+
+    console.log(patients);
 
     return patients;
   }

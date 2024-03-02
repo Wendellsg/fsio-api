@@ -149,8 +149,8 @@ model Professional {
   presentation String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  Appointment  Appointment[]
-  Evolution    Evolution[]
+  appointments Appointment[]
+  evolutions   Evolution[]
   routines     Routine[]
   requests     Request[]
   patients     User[]        @relation("ProfessionalsToPatients")

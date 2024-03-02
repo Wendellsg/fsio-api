@@ -14,6 +14,7 @@ import { ProfessionalsModule } from './professionals/professionals.module';
 import { RoutinesModule } from './routines/routines.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UsersModule } from './users/users.module';
     RoutinesModule,
     ProfessionalsModule,
     PrismaModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
