@@ -1,16 +1,13 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/users/entities/user.entity';
-import { UsersService } from 'src/users/users.service';
-import { Repository } from 'typeorm';
+import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
+    private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    @Inject('USERS_REPOSITORY') private usersRepository: Repository<User>,
   ) {}
 
   async login(
@@ -51,16 +48,37 @@ export class AuthService {
     password: string;
     name: string;
   }) {
-    return await this.usersService.create({
-      email,
-      password,
-      name,
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (user) {
+      throw new HttpException('Usuário já existe', HttpStatus.BAD_REQUEST);
+    }
+
+    if (password.length < 8) {
+      throw new HttpException(
+        'Senha deve conter no mínimo 8 caracteres',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.prisma.user.create({
+      data: {
+        email,
+        password: await bcrypt.hash(password, 10),
+        name,
+      },
     });
   }
 
   private async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.usersRepository.findOne({
-      where: { email },
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
     });
 
     if (!user) {
@@ -87,7 +105,17 @@ export class AuthService {
   }
 
   async me(id: string) {
-    const user = await this.usersService.findOne(id);
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        email: true,
+        name: true,
+        id: true,
+        image: true,
+      },
+    });
     return user;
   }
 }

@@ -10,6 +10,11 @@ import { EvolutionsModule } from './evolutions/evolutions.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
+import { PatientsModule } from './patients/patients.module';
+import { ActivitiesModule } from './activities/activities.module';
+import { RequestsModule } from './requests/requests.module';
+import { RotinesModule } from './rotines/rotines.module';
+import { RoutinesModule } from './routines/routines.module';
 
 @Module({
   imports: [
@@ -29,6 +34,11 @@ import { UsersModule } from './users/users.module';
     AppointmentsModule,
     EvolutionsModule,
     DatabasesModule,
+    PatientsModule,
+    ActivitiesModule,
+    RequestsModule,
+    RotinesModule,
+    RoutinesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

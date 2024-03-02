@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { UserRoleEnum } from '@prisma/client';
 import { Request } from 'express';
-import { Role } from 'src/users/entities/user.entity';
 
 export const ROLE_KEY = 'role';
 
-export const Roles = (...role: Role[]) => SetMetadata(ROLE_KEY, role);
+export const Roles = (...role: UserRoleEnum[]) => SetMetadata(ROLE_KEY, role);
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -20,10 +20,10 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLE_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<UserRoleEnum[]>(
+      ROLE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     const token = extractTokenFromHeader(request);
     if (!token) {
       throw new UnauthorizedException();
