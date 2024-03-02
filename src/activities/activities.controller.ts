@@ -1,34 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Param,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { Prisma, UserRoleEnum } from '@prisma/client';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
 import { ActivitiesService } from './activities.service';
-import { CreateActivityDto } from './dto/create-activity.dto';
-import { UpdateActivityDto } from './dto/update-activity.dto';
 
 @Controller('activities')
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
+  @Roles(UserRoleEnum.professional, UserRoleEnum.patient)
+  @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createActivityDto: CreateActivityDto) {
+  create(@Body() createActivityDto: Prisma.ActivityCreateInput) {
     return this.activitiesService.create(createActivityDto);
   }
 
-  @Get()
-  findAll() {
-    return this.activitiesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.activitiesService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateActivityDto: UpdateActivityDto) {
-    return this.activitiesService.update(+id, updateActivityDto);
-  }
-
+  @Roles(UserRoleEnum.patient)
+  @UseGuards(AuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.activitiesService.remove(+id);
+  remove(@Request() request, @Param('id') id: string) {
+    return this.activitiesService.remove(request.user.id, id);
   }
 }

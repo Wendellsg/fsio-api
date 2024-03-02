@@ -1,55 +1,11 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UpdatePatientDto } from './dtos';
 
 export class PatientsService {
   constructor(private prisma: PrismaService) {}
 
-  async findPatients(id: string) {
-    const user = await this.prisma.professional.findFirst({
-      where: {
-        id: id,
-      },
-      include: {
-        patients: true,
-      },
-    });
-
-    if (!user)
-      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
-
-    return user.patients.map((patient) => {
-      return patient;
-    });
-  }
-
-  async findUserProfessionals(id: string) {
-    const professionals = await this.prisma.professional.findMany({
-      where: {
-        userId: id,
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    if (!professionals)
-      throw new HttpException(
-        'Profissionais não encontrados',
-        HttpStatus.NOT_FOUND,
-      );
-
-    return professionals;
-  }
-
-  async getPatient(patientId: string) {
+  async findOne(patientId: string, professionalId: string) {
     const patient = await this.prisma.user.findFirst({
       where: {
         id: patientId,
@@ -61,6 +17,11 @@ export class PatientsService {
         image: true,
         weight: true,
         height: true,
+        professionals: {
+          select: {
+            id: true,
+          },
+        },
         routines: {
           select: {
             professional: {
@@ -94,13 +55,20 @@ export class PatientsService {
     if (!patient)
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
 
+    if (
+      !patient.professionals.find(
+        (professional) => professional.id === professionalId,
+      )
+    )
+      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
+
     return {
       message: 'Usuário encontrado',
       data: patient,
     };
   }
 
-  async addPatient(professionalId: string, patientId: string) {
+  async create(professionalId: string, patientId: string) {
     const professional = await this.prisma.professional.findFirst({
       where: {
         id: professionalId,
@@ -150,18 +118,12 @@ export class PatientsService {
     };
   }
 
-  async getPatients(userId: string) {
-    const professional = await this.prisma?.professional.findUnique({
-      where: {
-        id: userId,
-      },
-    });
-
+  async findAll(professionalId: string) {
     const patients = await this.prisma?.user.findMany({
       where: {
         professionals: {
           some: {
-            id: professional?.id,
+            id: professionalId,
           },
         },
       },
@@ -277,13 +239,40 @@ export class PatientsService {
     };
   }
 
-  async updatePatient(patient: Partial<User>) {
+  async update(
+    patientId: string,
+    professionalId: string,
+    updatePatientDto: UpdatePatientDto,
+  ) {
     try {
+      const patient = await this.prisma.user.findFirst({
+        where: {
+          id: patientId,
+        },
+
+        select: {
+          professionals: true,
+        },
+      });
+
+      if (!patient)
+        throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
+
+      if (
+        !patient.professionals.find(
+          (professional) => professional.id === professionalId,
+        )
+      )
+        throw new HttpException(
+          'Você não pode atualizar este usuário',
+          HttpStatus.FORBIDDEN,
+        );
+
       await this.prisma.user.update({
         where: {
-          id: patient.id,
+          id: patientId,
         },
-        data: { ...patient },
+        data: { ...updatePatientDto },
       });
 
       return {
@@ -292,6 +281,32 @@ export class PatientsService {
     } catch (error) {
       throw new HttpException(
         'Erro ao atualizar usuário',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async remove(id: string, professionalId: string) {
+    try {
+      await this.prisma.user.update({
+        where: {
+          id,
+        },
+        data: {
+          professionals: {
+            disconnect: {
+              id: professionalId,
+            },
+          },
+        },
+      });
+
+      return {
+        message: 'Paciente removido com sucesso',
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Erro ao remover paciente',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

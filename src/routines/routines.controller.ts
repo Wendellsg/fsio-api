@@ -1,34 +1,55 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { Prisma, UserRoleEnum } from '@prisma/client';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
 import { RoutinesService } from './routines.service';
-import { CreateRoutineDto } from './dto/create-routine.dto';
-import { UpdateRoutineDto } from './dto/update-routine.dto';
 
 @Controller('routines')
 export class RoutinesController {
   constructor(private readonly routinesService: RoutinesService) {}
 
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createRoutineDto: CreateRoutineDto) {
-    return this.routinesService.create(createRoutineDto);
+  create(
+    @Body() createRoutineDto: Prisma.RoutineCreateInput,
+    @Request() request,
+  ) {
+    return this.routinesService.create(
+      request.user.professionalId,
+      createRoutineDto,
+    );
   }
 
+  @UseGuards(AuthGuard)
   @Get()
-  findAll() {
-    return this.routinesService.findAll();
+  findByPatient(@Request() request) {
+    return this.routinesService.findByPatient(request.user.id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.routinesService.findOne(+id);
-  }
-
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoutineDto: UpdateRoutineDto) {
-    return this.routinesService.update(+id, updateRoutineDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateRoutineDto: Prisma.RoutineUpdateInput,
+  ) {
+    return this.routinesService.update(id, updateRoutineDto);
   }
 
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.routinesService.remove(+id);
+  remove(@Param('id') id: string, @Request() request) {
+    return this.routinesService.remove(id, request.user.professionalId);
   }
 }

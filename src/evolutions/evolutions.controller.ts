@@ -3,53 +3,64 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { CreateEvolutionDto } from './dto/create-evolution.dto';
-import { UpdateEvolutionDto } from './dto/update-evolution.dto';
+import { Prisma, UserRoleEnum } from '@prisma/client';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
 import { EvolutionsService } from './evolutions.service';
 
 @Controller('evolutions')
 export class EvolutionsController {
   constructor(private readonly evolutionsService: EvolutionsService) {}
 
+  @Roles(UserRoleEnum.professional)
   @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createEvolutionDto: CreateEvolutionDto, @Request() request) {
-    createEvolutionDto.professionalId = request.user.id;
+  create(
+    @Body() createEvolutionDto: Prisma.EvolutionCreateInput,
+    @Request() request,
+  ) {
+    if (
+      request.user.professionalId !== createEvolutionDto.professional.connect.id
+    ) {
+      throw new HttpException(
+        'Você não tem permissão para criar uma evolução para outro profissional',
+        HttpStatus.FORBIDDEN,
+      );
+    }
     return this.evolutionsService.create(createEvolutionDto);
   }
 
-  @Get()
-  findAll() {
-    return this.evolutionsService.findAll();
-  }
-
+  @Roles(UserRoleEnum.professional)
   @UseGuards(AuthGuard)
-  @Get('doctor')
-  findByDoctor(@Request() request) {
-    const doctorId = request.user.id;
-    return this.evolutionsService.findByProfessional(doctorId);
+  @Get()
+  findByPatient(@Request() request, @Query('patientId') patientId: string) {
+    return this.evolutionsService.findByPatient(
+      request.user.professionalId,
+      patientId,
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.evolutionsService.findOne(id);
-  }
-
+  @Roles(UserRoleEnum.professional)
   @UseGuards(AuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateEvolutionDto: UpdateEvolutionDto,
+    @Body() updateEvolutionDto: Prisma.EvolutionUpdateInput,
     @Request() request,
   ) {
-    return this.evolutionsService.update(id, updateEvolutionDto, request.user);
+    return this.evolutionsService.update(
+      id,
+      updateEvolutionDto,
+      request.user.professionalId,
+    );
   }
 
   @UseGuards(AuthGuard)

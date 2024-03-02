@@ -1,46 +1,21 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { AppointmentStatusEnum } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AppointmentsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAppointmentDto: {
-    professionalId: string;
-    patientId: string;
-    startDate: Date;
-    endDate: Date;
-    status: AppointmentStatusEnum;
-  }) {
+  async create(createAppointmentDto: Prisma.AppointmentCreateInput) {
     try {
-      const professional = await this.prisma?.professional.findUnique({
-        where: { id: createAppointmentDto.professionalId },
-      });
-
-      if (!professional) {
-        throw new Error('Profissional não encontrado');
-      }
-
-      const patient = await this.prisma?.user.findUnique({
-        where: { id: createAppointmentDto.patientId },
-      });
-
-      if (!patient) {
-        return Response.json(
-          {
-            message: 'Paciente não encontrado',
-          },
-          {
-            status: 404,
-          },
-        );
-      }
-
-      this.prisma?.appointment.create({
+      await this.prisma?.appointment.create({
         data: {
-          professionalId: createAppointmentDto.professionalId,
-          patientId: createAppointmentDto.patientId,
+          professional: {
+            connect: { id: createAppointmentDto.professional.connect.id },
+          },
+          patient: {
+            connect: { id: createAppointmentDto.patient.connect.id },
+          },
           startDate: createAppointmentDto.startDate,
           endDate: createAppointmentDto.endDate,
           status: createAppointmentDto.status,
@@ -60,10 +35,6 @@ export class AppointmentsService {
     }
   }
 
-  findAll() {
-    return `This action returns all appointments`;
-  }
-
   async findByProfessional(
     professionalId: string,
     {
@@ -80,13 +51,11 @@ export class AppointmentsService {
       });
 
       if (!professional) {
-        return Response.json(
+        throw new HttpException(
           {
             message: 'Profissional não encontrado',
           },
-          {
-            status: 404,
-          },
+          HttpStatus.NOT_FOUND,
         );
       }
 
@@ -123,14 +92,12 @@ export class AppointmentsService {
         },
       });
     } catch (error) {
-      return Response.json(
+      throw new HttpException(
         {
           message: 'Erro ao buscar agendamentos',
           error,
         },
-        {
-          status: 500,
-        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -168,44 +135,22 @@ export class AppointmentsService {
     }
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} appointment`;
-  }
-
   async update(
     id: string,
-    updateAppointmentDto: {
-      professionalId: string;
-      patientId: string;
-      startDate: Date;
-      endDate: Date;
-      status: AppointmentStatusEnum;
-    },
+    professionalId: string,
+    updateAppointmentDto: Prisma.AppointmentUpdateInput,
   ) {
     try {
-      const professional = await this.prisma?.professional.findUnique({
-        where: { id: updateAppointmentDto.professionalId },
-      });
-
-      if (!professional) {
-        throw new HttpException(
-          {
-            message: 'Profissional não encontrado',
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-
       const appointment = await this.prisma?.appointment.findUnique({
         where: { id },
       });
 
-      if (!appointment || appointment.professionalId !== professional.id) {
+      if (!appointment || appointment.professionalId !== professionalId) {
         throw new HttpException(
           {
-            message: 'Agendamento não encontrado',
+            message: 'Você não tem permissão para atualizar este agendamento',
           },
-          HttpStatus.NOT_FOUND,
+          HttpStatus.FORBIDDEN,
         );
       }
 

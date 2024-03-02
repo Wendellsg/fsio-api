@@ -1,9 +1,9 @@
-import { AppointmentStatus } from '../entities/appointment.entity';
+import { AppointmentStatusEnum } from '@prisma/client';
 
 export class CreateAppointmentDto {
   patientId: string;
   professionalId: string;
   startDate: string;
   endDate: string;
-  status: AppointmentStatus;
+  status: AppointmentStatusEnum;
 }

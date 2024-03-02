@@ -1,34 +1,63 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { UserRoleEnum } from '@prisma/client';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
+import { UpdatePatientDto } from './dtos';
 import { PatientsService } from './patients.service';
-import { CreatePatientDto } from './dto/create-patient.dto';
-import { UpdatePatientDto } from './dto/update-patient.dto';
 
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createPatientDto: CreatePatientDto) {
-    return this.patientsService.create(createPatientDto);
+  create(@Body('patientId') patientId: string, @Request() request) {
+    return this.patientsService.create(request.user.professionalId, patientId);
   }
 
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Get()
-  findAll() {
-    return this.patientsService.findAll();
+  findAll(@Request() request) {
+    return this.patientsService.findAll(request.user.professionalId);
   }
 
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.patientsService.findOne(+id);
+  findOne(@Param('id') id: string, @Request() request) {
+    return this.patientsService.findOne(id, request.user.professionalId);
   }
 
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto) {
-    return this.patientsService.update(+id, updatePatientDto);
+  update(
+    @Request() request,
+    @Param('id') id: string,
+    @Body() updatePatientDto: UpdatePatientDto,
+  ) {
+    return this.patientsService.update(
+      id,
+      request.user.professionalId,
+      updatePatientDto,
+    );
   }
 
+  @Roles(UserRoleEnum.professional)
+  @UseGuards(AuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.patientsService.remove(+id);
+  remove(@Param('id') id: string, @Request() request) {
+    return this.patientsService.remove(id, request.user.professionalId);
   }
 }

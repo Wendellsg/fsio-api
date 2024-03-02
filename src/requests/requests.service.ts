@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RequestStatusEnum } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class RequestsService {
@@ -67,7 +67,7 @@ export class RequestsService {
     }
   }
 
-  async getProfessionalRequests(professionalId: string) {
+  async findAllByProfessional(professionalId: string) {
     const requests = await this.prisma?.request.findMany({
       where: {
         professionalId: professionalId,
@@ -212,7 +212,7 @@ export class RequestsService {
     }
   }
 
-  async getPatientRequests(patientId: string) {
+  async findAllByPatient(patientId: string) {
     const requests = await this.prisma?.request.findMany({
       where: {
         userId: patientId,
@@ -225,7 +225,7 @@ export class RequestsService {
     return requests;
   }
 
-  async cancelRequest(requestId: string, professionalId: string) {
+  async remove(requestId: string, professionalId: string) {
     if (!requestId) {
       throw new HttpException(
         'Id requisição não enviado',
@@ -240,7 +240,10 @@ export class RequestsService {
     });
 
     if (!request) {
-      return Response.json({ message: 'Requisição não encontrada' });
+      return new HttpException(
+        'Requisição não encontrada',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     if (request.professionalId !== professionalId) {

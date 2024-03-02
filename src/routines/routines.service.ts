@@ -1,59 +1,49 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import {
   Prisma,
-  Routine,
   RoutineFrequencyTypeEnum,
   RoutinePeriodEnum,
 } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class RoutinesService {
   constructor(private prisma: PrismaService) {}
 
-  async createRoutine(id: string, routine: Routine, professionalId: string) {
+  async create(
+    professionalId: string,
+    createRoutineDto: Prisma.RoutineCreateInput,
+  ) {
     try {
-      const user = await this.prisma.user.findFirst({
+      const professional = await this.prisma.professional.findUnique({
         where: {
-          id: id,
-        },
-      });
-      if (!user)
-        throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
-      const professional = await this.prisma.professional.findFirst({
-        where: {
-          id: professionalId,
+          userId: professionalId,
         },
       });
 
-      if (!professional)
+      if (!professional) {
         throw new HttpException(
           'Profissional não encontrado',
           HttpStatus.NOT_FOUND,
         );
+      }
 
-      const exercise = await this.prisma.exercise.findFirst({
-        where: {
-          id: routine.exerciseId,
-        },
-      });
-
-      if (!exercise)
-        throw new HttpException(
-          'Exercício não encontrado',
-          HttpStatus.NOT_FOUND,
-        );
       await this.prisma.routine.create({
         data: {
-          professionalId: professionalId,
-          userId: id,
-          exerciseId: routine.exerciseId,
-          description: routine.description,
-          frequency: routine.frequency,
-          frequencyType: RoutineFrequencyTypeEnum[routine.frequencyType],
-          period: RoutinePeriodEnum[routine.period],
-          repetitions: routine.repetitions,
-          series: routine.series,
+          user: createRoutineDto.user,
+          exercise: createRoutineDto.exercise,
+          description: createRoutineDto.description,
+          frequency: createRoutineDto.frequency,
+          frequencyType:
+            RoutineFrequencyTypeEnum[createRoutineDto.frequencyType],
+          period: RoutinePeriodEnum[createRoutineDto.period],
+          repetitions: createRoutineDto.repetitions,
+          series: createRoutineDto.series,
+          professional: {
+            connect: {
+              id: professionalId,
+            },
+          },
         },
       });
 
@@ -69,7 +59,7 @@ export class RoutinesService {
     }
   }
 
-  async getRoutines(userId: string) {
+  async findByPatient(userId: string) {
     try {
       const routines = await this.prisma.routine.findMany({
         where: {
@@ -135,13 +125,9 @@ export class RoutinesService {
     }
   }
 
-  async updateRoutine(
-    id: string,
-    routineId: string,
-    routine: Prisma.RoutineUpdateInput,
-  ) {
+  async update(routineId: string, routine: Prisma.RoutineUpdateInput) {
     try {
-      const updatedUser = await this.prisma.routine.update({
+      const updatedRoutine = await this.prisma.routine.update({
         where: {
           id: routineId,
         },
@@ -151,12 +137,47 @@ export class RoutinesService {
       });
 
       return {
-        message: 'User updated',
-        user: updatedUser,
+        message: 'Routine updated',
+        routine: updatedRoutine,
       };
     } catch (error) {
       throw new HttpException(
         'Erro ao atualizar rotina',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async remove(routineId: string, professionalId: string) {
+    try {
+      const routine = await this.prisma.routine.findUnique({
+        where: {
+          id: routineId,
+        },
+        select: {
+          professionalId: true,
+        },
+      });
+
+      if (routine.professionalId !== professionalId) {
+        throw new HttpException(
+          'Você não tem permissão para deletar essa rotina',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+
+      await this.prisma.routine.delete({
+        where: {
+          id: routineId,
+        },
+      });
+
+      return {
+        message: 'Routine deleted',
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Erro ao deletar rotina',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

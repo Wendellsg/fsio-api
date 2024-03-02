@@ -1,11 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 @Injectable()
 export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
-  async createActivity(createActivityDto: Prisma.ActivityCreateInput) {
+  async create(createActivityDto: Prisma.ActivityCreateInput) {
     try {
       await this.prisma.activity.create({
         data: {
@@ -29,7 +29,7 @@ export class ActivitiesService {
     }
   }
 
-  async removeActivity(id: string, routineId: string, activityId: string) {
+  async remove(id: string, activityId: string) {
     try {
       const activity = await this.prisma.activity.findFirst({
         where: {
