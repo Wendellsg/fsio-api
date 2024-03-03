@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  comments    String
+  painLevel   Int
+  effortLevel Int
+  date        DateTime
+  routineId   String
+  routine     Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id             String                @id @default(uuid())
+  startDate      DateTime
+  endDate        DateTime
+  status         AppointmentStatusEnum @default(scheduled)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @default(now())
+  professionalId String
+  professional   Professional          @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  patientId      String
+  patient        User                  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  comments       AppointmentComment[]
+}
+
+model AppointmentComment {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  comment       String
+  appointmentId String
+  Appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@unique([appointmentId])
+}
+
+model Evolution {
+  id                String       @id @default(uuid())
+  date              DateTime
+  clinicalDiagnosis String
+  physicalDiagnosis String
+  evolution         String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime
+  professionalId    String
+  professional      Professional @relation(fields: [professionalId], references: [id])
+  userId            String
+  user              User         @relation(fields: [userId], references: [id])
+}
+
+model Exercise {
+  id          String               @id @default(uuid())
+  name        String
+  description String
+  category    ExerciseCategoryEnum
+  image       String?
+  video       String?
+  summary     String
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  routines    Routine[]
+  users       ExercisesOnUser[]
+}
+
+model ExercisesOnUser {
+  id         String     @id @default(uuid())
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  exerciseId String
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  Exercise   Exercise[]
+}
+
+model Routine {
+  id             String                   @id @default(uuid())
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  description    String
+  frequency      Int
+  frequencyType  RoutineFrequencyTypeEnum @default(day)
+  repetitions    Int
+  series         Int
+  period         RoutinePeriodEnum        @default(morning)
+  userId         String
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   Professional             @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  exerciseId     String
+  exercise       Exercise                 @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  activities     Activity[]
+}
+
+model User {
+  id                 String            @id @default(uuid())
+  name               String
+  email              String            @unique
+  password           String?
+  resetPasswordToken String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  image              String?
+  imageFileId        String?
+  phone              String?
+  roles              UserRoleEnum[]    @default([patient])
+  height             Int?
+  weight             Int?
+  birthDate          DateTime?
+  professionals      Professional[]    @relation("ProfessionalsToPatients")
+  address            Address?
+  appointments       Appointment[]
+  evolutions         Evolution[]
+  routines           Routine[]
+  files              FileUploaded[]
+  requests           Request[]
+  favoriteExercises  ExercisesOnUser[]
+  professional       Professional?
+}
+
+model Request {
+  id             String            @id @default(uuid())
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  status         RequestStatusEnum @default(pending)
+  professionalId String
+  professional   Professional      @relation(fields: [professionalId], references: [id])
+  userId         String
+  user           User              @relation(fields: [userId], references: [id])
+}
+
+model Professional {
+  id           String        @id @default(uuid())
+  address      Address       @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId    String        @unique
+  phone        String?
+  profession   String
+  license      String
+  licenseState String
+  licenseImage String?
+  verifiedAt   DateTime?
+  presentation String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+  evolutions   Evolution[]
+  routines     Routine[]
+  requests     Request[]
+  patients     User[]        @relation("ProfessionalsToPatients")
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+model FileUploaded {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  url       String
+  type      String
+  user      User[]
+}
+
+model Address {
+  id           String        @id @default(uuid())
+  street       String
+  number       String
+  city         String
+  state        String
+  zipCode      String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       String?       @unique
+  user         User?         @relation(fields: [userId], references: [id])
+  Professional Professional?
+}
+
+enum ExerciseCategoryEnum {
+  legs
+  arms
+  back
+  chest
+  shoulders
+  abs
+  cardio
+}
+
+enum RoutineFrequencyTypeEnum {
+  day
+  week
+  month
+}
+
+enum RoutinePeriodEnum {
+  morning
+  afternoon
+  night
+}
+
+enum UserRoleEnum {
+  patient
+  professional
+  admin
+}
+
+enum AppointmentStatusEnum {
+  scheduled
+  canceled
+  done
+}
+
+enum RequestStatusEnum {
+  pending
+  accepted
+  rejected
+}

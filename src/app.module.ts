@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { ActivitiesModule } from './activities/activities.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
-import { DatabasesModule } from './databases/databases.module';
 import { EvolutionsModule } from './evolutions/evolutions.module';
 import { ExercisesModule } from './exercises/exercises.module';
+import { PatientsModule } from './patients/patients.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { ProfessionalsModule } from './professionals/professionals.module';
+import { RequestsModule } from './requests/requests.module';
+import { RoutinesModule } from './routines/routines.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
 
@@ -28,7 +34,13 @@ import { UsersModule } from './users/users.module';
     UploadsModule,
     AppointmentsModule,
     EvolutionsModule,
-    DatabasesModule,
+    PatientsModule,
+    ActivitiesModule,
+    RoutinesModule,
+    ProfessionalsModule,
+    PrismaModule,
+    AnalyticsModule,
+    RequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

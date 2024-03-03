@@ -1,35 +1,29 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
-import { CreateEvolutionDto } from './dto/create-evolution.dto';
-import { UpdateEvolutionDto } from './dto/update-evolution.dto';
-import { Evolution } from './entities/evolution.entity';
+import { HttpException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class EvolutionsService {
-  constructor(
-    @Inject('EVOLUTIONS_REPOSITORY')
-    private evolutionsRepository: Repository<Evolution>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async create(createEvolutionDto: CreateEvolutionDto) {
+  async create(createEvolutionDto: Prisma.EvolutionCreateInput) {
     try {
-      const newEvolution = this.evolutionsRepository.create(createEvolutionDto);
-
-      return await this.evolutionsRepository.save(newEvolution);
+      await this.prisma.evolution.create({
+        data: createEvolutionDto,
+      });
     } catch (error) {
-      throw new HttpException('Erro ao criar agendamento', error.status || 500);
+      throw new HttpException('Erro ao criar evolução', error.status || 500);
     }
   }
 
-  findAll() {
-    return `This action returns all evolutions`;
-  }
-
-  async findByProfessional(professionalId: string) {
+  async findByPatient(professionalId: string, patientId: string) {
     try {
-      return await this.evolutionsRepository.find({
+      return await this.prisma.evolution.findMany({
         where: {
-          professional: { id: In([professionalId]) },
+          AND: {
+            userId: patientId,
+            professionalId: professionalId,
+          },
         },
       });
     } catch (error) {
@@ -40,52 +34,53 @@ export class EvolutionsService {
     }
   }
 
-  async findByPatient(patientId: string) {
+  async update(
+    id: string,
+    updateEvolutionDto: Prisma.EvolutionUpdateInput,
+    professionalId: string,
+  ) {
     try {
-      return await this.evolutionsRepository.find({
+      if (updateEvolutionDto.professional.connect.id !== professionalId) {
+        throw new HttpException('Não autorizado', 401);
+      }
+
+      return await this.prisma.evolution.update({
         where: {
-          user: { id: In([patientId]) },
+          id,
         },
+        data: updateEvolutionDto,
       });
     } catch (error) {
       throw new HttpException(
-        'Erro ao buscar agendamentos',
-        error.status || 404,
+        'Erro ao atualizar evolução',
+        error.status || 500,
       );
     }
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} evolution`;
-  }
-
-  async update(id: string, updateEvolutionDto: UpdateEvolutionDto, user: any) {
+  async remove(id: string, professionalId: string) {
     try {
-      if (updateEvolutionDto.professionalId !== user.id) {
-        throw new HttpException('Não autorizado', 401);
-      }
-
-      return await this.evolutionsRepository.update(id, updateEvolutionDto);
-    } catch (error) {}
-  }
-
-  async remove(id: string, user: any) {
-    try {
-      const evolution = await this.evolutionsRepository.findOne({
+      const evolution = await this.prisma.evolution.findUnique({
         where: {
-          id: In([id]),
+          id: id,
         },
       });
 
-      if (!evolution || evolution.professional.id !== user.id) {
+      if (!evolution || evolution.professionalId !== professionalId) {
         throw new HttpException('Não autorizado', 401);
       }
 
-      await this.evolutionsRepository.delete(id);
+      await this.prisma.evolution.delete({
+        where: {
+          id,
+        },
+      });
 
       return {
         message: 'Agendamento removido com sucesso',
       };
-    } catch (error) {}
+    } catch (error) {
+      throw new HttpException('Erro ao remover evolução', error.status || 500);
+    }
   }
 }

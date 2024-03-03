@@ -1,22 +1,20 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ExerciseCategoryEnum, Prisma } from '@prisma/client';
 
-import { Repository } from 'typeorm';
-import { CreateExerciseDto } from './dto/create-exercise.dto';
-import { UpdateExerciseDto } from './dto/update-exercise.dto';
-import { Category, Exercise } from './entities/exercise.entity';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ExercisesService {
-  constructor(
-    @Inject('EXERCISES_REPOSITORY')
-    private exercisesRepository: Repository<Exercise>,
-  ) {}
-  async create(createExerciseDto: CreateExerciseDto) {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createExerciseDto: Prisma.ExerciseCreateInput) {
     try {
-      const newExercise = this.exercisesRepository.create({
-        ...createExerciseDto,
+      const newExercise = this.prisma.exercise.create({
+        data: createExerciseDto,
       });
-      return await this.exercisesRepository.save(newExercise);
+      return {
+        message: 'Exercício criado com sucesso',
+      };
     } catch (error) {
       throw new HttpException(
         {
@@ -27,25 +25,33 @@ export class ExercisesService {
     }
   }
 
-  async findAll(search?: string, category?: Category) {
-    const query = this.exercisesRepository.createQueryBuilder('exercise');
-
+  async findAll(search?: string, category?: ExerciseCategoryEnum) {
+    const query: Prisma.ExerciseFindManyArgs = {};
     if (search) {
-      query.where('exercise.name ILIKE :search', { search: `%${search}%` });
+      query.where.name = {
+        contains: search,
+        mode: 'insensitive',
+      };
     }
-
     if (category) {
-      query.andWhere('exercise.category = :category', { category });
+      query.where.category = category;
     }
-
-    const exercises = await query.getMany();
-
-    return exercises;
+    try {
+      const exercises = await this.prisma.exercise.findMany(query);
+      return exercises;
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: 'Erro ao buscar exercícios',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   findOne(id: string) {
     try {
-      return this.exercisesRepository.findOne({
+      return this.prisma.exercise.findUnique({
         where: { id },
       });
     } catch (error) {
@@ -58,9 +64,12 @@ export class ExercisesService {
     }
   }
 
-  async update(id: string, updateExerciseDto: UpdateExerciseDto) {
+  async update(id: string, updateExerciseDto: Prisma.ExerciseUpdateInput) {
     try {
-      await this.exercisesRepository.update(id, updateExerciseDto);
+      await this.prisma.exercise.update({
+        where: { id },
+        data: updateExerciseDto,
+      });
     } catch (error) {
       throw new HttpException(
         {
@@ -73,7 +82,9 @@ export class ExercisesService {
 
   async remove(id: string) {
     try {
-      await this.exercisesRepository.delete(id);
+      await this.prisma.exercise.delete({
+        where: { id },
+      });
     } catch (error) {
       throw new HttpException(
         {

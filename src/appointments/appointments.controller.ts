@@ -3,72 +3,89 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { Prisma, UserRoleEnum } from '@prisma/client';
+import { AuthGuard, Roles } from 'src/auth/auth.guard';
 import { AppointmentsService } from './appointments.service';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
-import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
+  @Roles(UserRoleEnum.professional)
   @UseGuards(AuthGuard)
   @Post()
   create(
-    @Body() createAppointmentDto: CreateAppointmentDto,
+    @Body() createAppointmentDto: Prisma.AppointmentUncheckedCreateInput,
     @Request() request,
   ) {
-    createAppointmentDto.professionalId = request.user.id;
+    if (request.user.professionalId !== createAppointmentDto.professionalId) {
+      throw new HttpException(
+        'Você não tem permissão para criar um agendamento para outro profissional',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     return this.appointmentsService.create(createAppointmentDto);
   }
 
-  @Get()
-  findAll() {
-    return this.appointmentsService.findAll();
-  }
-
+  @Roles(UserRoleEnum.professional)
   @UseGuards(AuthGuard)
-  @Get('doctor')
-  findByDoctor(@Request() request) {
-    const doctorId = request.user.id;
-    return this.appointmentsService.findByProfessional(doctorId);
+  @Get('professional')
+  findByProfessional(
+    @Request() request,
+    @Query('start-date') startDate: Date,
+    @Query('end-date') endDate: Date,
+  ) {
+    return this.appointmentsService.findByProfessional(
+      request.user.professionalId,
+      {
+        startDate,
+        endDate,
+      },
+    );
   }
 
+  @Roles(UserRoleEnum.patient)
   @UseGuards(AuthGuard)
   @Get('patient')
-  findByPatient(@Request() request) {
-    const patientId = request.user.id;
-    return this.appointmentsService.findByPatient(patientId);
+  findByPatient(
+    @Request() request,
+    @Query('start-date') startDate: Date,
+    @Query('end-date') endDate: Date,
+  ) {
+    return this.appointmentsService.findByPatient(request.user.id, {
+      startDate,
+      endDate,
+    });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.appointmentsService.findOne(id);
-  }
-
+  @Roles(UserRoleEnum.professional)
   @UseGuards(AuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateAppointmentDto: UpdateAppointmentDto,
+    @Body() updateAppointmentDto: Prisma.AppointmentUncheckedUpdateInput,
     @Request() request,
   ) {
     return this.appointmentsService.update(
       id,
+      request.user.professionalId,
       updateAppointmentDto,
-      request.user,
     );
   }
 
   @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Request() request) {
-    return this.appointmentsService.remove(id, request.user);
+    return this.appointmentsService.remove(id, request.user.professionalId);
   }
 }
