@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from 'src/prisma/prisma.module';
 import { RoutinesController } from './routines.controller';
 import { RoutinesService } from './routines.service';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [],
   controllers: [RoutinesController],
   providers: [RoutinesService],
 })

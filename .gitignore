@@ -41,3 +41,4 @@ deploy.cmd
 .vercel
 postgres-data
 pgadmin-data
+prisma/migrations
