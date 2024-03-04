@@ -123,6 +123,8 @@ model User {
   requests           Request[]
   favoriteExercises  ExercisesOnUser[]
   professional       Professional?
+  accountVerifiedAt  DateTime?
+  accountVerifyToken String?
 }
 
 model Request {
@@ -250,4 +252,11 @@ enum RequestStatusEnum {
   pending
   accepted
   rejected
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

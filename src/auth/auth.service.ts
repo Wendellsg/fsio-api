@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { User, UserRoleEnum } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -45,10 +45,12 @@ export class AuthService {
     email,
     password,
     name,
+    isProfessional,
   }: {
     email: string;
     password: string;
     name: string;
+    isProfessional: boolean;
   }) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -72,6 +74,7 @@ export class AuthService {
         email,
         password: await bcrypt.hash(password, 10),
         name,
+        roles: isProfessional ? [UserRoleEnum.admin] : [UserRoleEnum.patient],
       },
     });
   }
@@ -128,6 +131,7 @@ export class AuthService {
         name: true,
         id: true,
         image: true,
+        roles: true,
       },
     });
     return user;

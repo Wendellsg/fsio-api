@@ -16,6 +16,8 @@ import { RequestsModule } from './requests/requests.module';
 import { RoutinesModule } from './routines/routines.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
+import { MailModule } from './mail/mail.module';
+import { LeadsModule } from './leads/leads.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     AnalyticsModule,
     RequestsModule,
+    MailModule,
+    LeadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
