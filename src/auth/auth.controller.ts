@@ -20,7 +20,13 @@ export class AuthController {
 
   @Post('sign-up')
   async signUp(
-    @Body() body: { email: string; password: string; name: string },
+    @Body()
+    body: {
+      email: string;
+      password: string;
+      name: string;
+      isProfessional: boolean;
+    },
   ) {
     return this.authService.signUp(body);
   }

@@ -1,53 +1,82 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { s3PreSignedUrl, s3Uploader } from 'src/uploads/s3-uploader';
-import { CreateUploadDto } from './dto/create-upload.dto';
-import { UpdateUploadDto } from './dto/update-upload.dto';
-
-const acepptedExtetion = {
-  images: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'],
-  videos: ['mp4'],
-};
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Prisma, UserRoleEnum } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { s3Delete, s3PreSignedUrl } from 'src/uploads/s3-uploader';
 
 @Injectable()
 export class UploadsService {
-  async create(createUploadDto: CreateUploadDto) {
-    const folder = Object.keys(acepptedExtetion).find((key) =>
-      acepptedExtetion[key].includes(createUploadDto.extention),
-    );
-    if (!folder) {
-      throw new HttpException('Not Acceptable Extention', 406);
-    }
+  constructor(private prisma: PrismaService) {}
 
-    const key = `${folder}/${Date.now().toString()}.${
-      createUploadDto.extention
-    }`;
+  async create(createUploadDto: Prisma.FileUploadedUncheckedCreateInput) {
+    return this.prisma.fileUploaded.create({
+      data: createUploadDto,
+    });
+  }
+
+  async requestUploadUrl(userId: string, extension: string) {
+    if (!userId || !extension)
+      throw new HttpException('Requisição inválida', HttpStatus.BAD_REQUEST);
+
+    const userFiles = await this.prisma.fileUploaded.findMany({
+      where: {
+        userId,
+      },
+    });
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    const filesSize = userFiles.reduce((acc, file) => {
+      return acc + file.size;
+    }, 0);
+
+    const Limit = 1000000 * 10; // 10MB
+
+    if (filesSize > Limit && !user.roles.includes(UserRoleEnum.admin))
+      throw new HttpException(
+        'Você já excedeu o limite de uploads',
+        HttpStatus.BAD_REQUEST,
+      );
+
+    const key = `${userId}/${Date.now().toString()}.${extension}`;
     const url = await s3PreSignedUrl(key);
-
     return {
       url,
     };
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string) {
-    const url = await s3Uploader(file, folder);
-    return {
-      url,
-    };
-  }
-
-  findAll() {
-    return `This action returns all uploads`;
+  findAll(userId: string) {
+    return this.prisma.fileUploaded.findMany({
+      where: {
+        userId,
+      },
+    });
   }
 
   findOne(id: number) {
     return `This action returns a #${id} upload`;
   }
 
-  update(id: number, updateUploadDto: UpdateUploadDto) {
-    return `This action updates a #${id} upload`;
-  }
+  async remove(id: string) {
+    try {
+      //Remove file from s3
 
-  remove(id: number) {
-    return `This action removes a #${id} upload`;
+      const file = await this.prisma.fileUploaded.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      await s3Delete(file.key);
+
+      await this.prisma.fileUploaded.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {}
   }
 }

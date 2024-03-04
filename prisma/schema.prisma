@@ -123,6 +123,8 @@ model User {
   requests           Request[]
   favoriteExercises  ExercisesOnUser[]
   professional       Professional?
+  accountVerifiedAt  DateTime?
+  accountVerifyToken String?
 }
 
 model Request {
@@ -159,13 +161,43 @@ model Professional {
 }
 
 model FileUploaded {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String        @id @default(uuid())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   name      String
-  url       String
-  type      String
+  key       String
+  type      FileTypeEnum
+  size      Int
+  extension ExtensionEnum
   user      User[]
+  userId    String
+}
+
+enum FileTypeEnum {
+  image
+  video
+  document
+}
+
+enum ExtensionEnum {
+  jpg
+  jpeg
+  png
+  gif
+  mp4
+  pdf
+  doc
+  docx
+  xls
+  xlsx
+  ppt
+  pptx
+  txt
+  csv
+  zip
+  rar
+  tar
+  gz
 }
 
 model Address {
@@ -220,4 +252,11 @@ enum RequestStatusEnum {
   pending
   accepted
   rejected
+}
+
+model Lead {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
