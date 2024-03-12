@@ -1,25 +1,24 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { checkTime } from 'src/utils';
 
 @Injectable()
 export class AppointmentsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createAppointmentDto: Prisma.AppointmentUncheckedCreateInput) {
-    //Resolve time zone issue
-
-    const startDate = new Date(createAppointmentDto.startDate);
-
-    startDate.setHours(startDate.getHours() - 3);
-
-    createAppointmentDto.startDate = startDate;
-
-    const endDate = new Date(createAppointmentDto.endDate);
-
-    endDate.setHours(endDate.getHours() - 3);
-
-    createAppointmentDto.endDate = endDate;
+    if (
+      checkTime(createAppointmentDto.startDateTime) === false ||
+      checkTime(createAppointmentDto.endDateTime) === false
+    ) {
+      throw new HttpException(
+        {
+          message: 'Horário inválido',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     try {
       await this.prisma?.appointment.create({
@@ -70,8 +69,6 @@ export class AppointmentsService {
           professionalId: professional.id,
           startDate: {
             gte: startDate,
-          },
-          endDate: {
             lte: endDate,
           },
         },
@@ -124,8 +121,6 @@ export class AppointmentsService {
           patientId: patientId,
           startDate: {
             gte: startDate,
-          },
-          endDate: {
             lte: endDate,
           },
         },
@@ -160,25 +155,24 @@ export class AppointmentsService {
         );
       }
 
-      //Resolve time zone issue
-
-      const startDate = new Date(updateAppointmentDto.startDate as string);
-
-      startDate.setHours(startDate.getHours() - 3);
-
-      updateAppointmentDto.startDate = startDate;
-
-      const endDate = new Date(updateAppointmentDto.endDate as string);
-
-      endDate.setHours(endDate.getHours() - 3);
-
-      updateAppointmentDto.endDate = endDate;
+      if (
+        checkTime(updateAppointmentDto.startDateTime as string) === false ||
+        checkTime(updateAppointmentDto.endDateTime as string) === false
+      ) {
+        throw new HttpException(
+          {
+            message: 'Horário inválido',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
       return await this.prisma?.appointment.update({
         where: { id },
         data: {
           startDate: updateAppointmentDto.startDate,
-          endDate: updateAppointmentDto.endDate,
+          startDateTime: updateAppointmentDto.startDateTime,
+          endDateTime: updateAppointmentDto.endDateTime,
           status: updateAppointmentDto.status,
         },
       });
