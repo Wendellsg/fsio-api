@@ -184,6 +184,7 @@ enum FileTypeEnum {
 enum ExtensionEnum {
   jpg
   jpeg
+  webp
   png
   gif
   mp4

@@ -1,45 +1,33 @@
 /* eslint-disable no-var */
-import { S3 } from 'aws-sdk';
+import * as s3 from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import 'dotenv/config';
 
-const s3 = new S3({
-  accessKeyId: process.env.S3_BUCKET_ACCESS_KEY_ID,
-  secretAccessKey: process.env.S3_BUCKET_SECRET_ACCESS_KEY,
-  region: process.env.S3_BUCKET_REGION,
-  signatureVersion: 'v4',
+const client = new s3.S3Client({
+  region: process.env.S3_BUCKET_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.S3_BUCKET_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.S3_BUCKET_SECRET_ACCESS_KEY || '',
+  },
 });
 
-export const s3Uploader: (
-  file: Express.Multer.File,
-  folder: string,
-) => Promise<string> = async (file, folder) => {
-  const key = `${Date.now().toString()}.${file.mimetype.split('/')[1]}`;
-  const params = {
-    Bucket: `${process.env.S3_BUCKET_NAME}/${folder}`,
-    Key: key,
-    Body: file.buffer,
-  };
-
-  const res = await s3.upload(params).promise();
-  return res.Location;
-};
-
 export const s3Delete: (key: string) => Promise<void> = async (key) => {
-  const params = {
-    Bucket: `${process.env.S3_BUCKET_NAME}`,
+  const command = new s3.DeleteObjectCommand({
+    Bucket: `${process.env.AWS_S3_BUCKET_NAME}`,
     Key: key,
-  };
+  });
 
-  await s3.deleteObject(params).promise();
+  try {
+    await client.send(command);
+  } catch (err) {
+    console.error(err);
+  }
 };
 
-export const s3PreSignedUrl: (key: string) => Promise<string> = async (key) => {
-  const params = {
+export const createPresigned = ({ key }: { key: string }) => {
+  const command = new s3.PutObjectCommand({
     Bucket: `${process.env.S3_BUCKET_NAME}`,
     Key: key,
-    Expires: 60,
-  };
-
-  const res = s3.getSignedUrlPromise('putObject', params);
-  return res;
+  });
+  return getSignedUrl(client, command, { expiresIn: 3600 });
 };

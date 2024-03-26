@@ -20,7 +20,11 @@ export class UploadsController {
   @Roles(UserRoleEnum.admin, UserRoleEnum.patient, UserRoleEnum.professional)
   @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createUploadDto: Prisma.FileUploadedUncheckedCreateInput) {
+  create(
+    @Body() createUploadDto: Prisma.FileUploadedUncheckedCreateInput,
+    @Request() req,
+  ) {
+    createUploadDto.userId = req.user.id;
     return this.uploadsService.create(createUploadDto);
   }
 

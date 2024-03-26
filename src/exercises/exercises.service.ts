@@ -9,12 +9,9 @@ export class ExercisesService {
 
   async create(createExerciseDto: Prisma.ExerciseCreateInput) {
     try {
-      const newExercise = this.prisma.exercise.create({
+      return await this.prisma.exercise.create({
         data: createExerciseDto,
       });
-      return {
-        message: 'Exercício criado com sucesso',
-      };
     } catch (error) {
       throw new HttpException(
         {

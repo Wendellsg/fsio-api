@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma, UserRoleEnum } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { s3Delete, s3PreSignedUrl } from 'src/uploads/s3-uploader';
+import { createPresigned, s3Delete } from 'src/uploads/s3-uploader';
 
 @Injectable()
 export class UploadsService {
@@ -42,9 +42,10 @@ export class UploadsService {
       );
 
     const key = `${userId}/${Date.now().toString()}.${extension}`;
-    const url = await s3PreSignedUrl(key);
+    const url = await createPresigned({ key });
     return {
       url,
+      key,
     };
   }
 
