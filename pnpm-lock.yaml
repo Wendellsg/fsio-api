@@ -69,6 +69,9 @@ dependencies:
   pg:
     specifier: ^8.11.3
     version: 8.11.3
+  react:
+    specifier: ^18.2.0
+    version: 18.2.0
   reflect-metadata:
     specifier: ^0.1.13
     version: 0.1.13
