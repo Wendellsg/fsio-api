@@ -106,7 +106,7 @@ model User {
   name               String
   email              String            @unique
   password           String?
-  resetPasswordToken String?
+  resetPasswordToken String?           @unique
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   image              String?
@@ -126,7 +126,7 @@ model User {
   favoriteExercises  ExercisesOnUser[]
   professional       Professional?
   accountVerifiedAt  DateTime?
-  accountVerifyToken String?
+  accountVerifyToken String?           @unique
 }
 
 model Request {
@@ -218,13 +218,14 @@ model Address {
 }
 
 enum ExerciseCategoryEnum {
-  legs
-  arms
-  back
-  chest
+  ankleAndFeet
+  knees
+  hipAndPelvis
+  thoracicAndLowBack
+  cervical
+  fistsAndHands
   shoulders
-  abs
-  cardio
+  elbowsAndForearms
 }
 
 enum RoutineFrequencyTypeEnum {

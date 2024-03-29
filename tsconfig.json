@@ -6,6 +6,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "jsx": "react",
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
