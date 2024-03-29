@@ -1,7 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { User, UserRoleEnum } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { Response } from 'express';
+import PlaidResetPasswordEmail from 'src/emails/forgotPassword';
+import { PlaidVerifyIdentityEmail } from 'src/emails/verificationCode';
+import { MailService } from 'src/mail/mail.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -9,6 +14,8 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailerService: MailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async login(
@@ -28,6 +35,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       roles: user.roles,
+      accountVerified: user.accountVerifiedAt ? true : false,
     };
 
     if (user.professional) {
@@ -59,7 +67,10 @@ export class AuthService {
     });
 
     if (user) {
-      throw new HttpException('Usuário já existe', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Já existe uma conta cadastrada com esse email',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     if (password.length < 8) {
@@ -68,15 +79,35 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     }
+    const accountVerifyToken = crypto.randomUUID();
 
-    return await this.prisma.user.create({
+    const BACKEND_URL = this.configService.get('BACKEND_URL');
+
+    const url = `${BACKEND_URL}/auth/verify-account?token=${accountVerifyToken}`;
+
+    await this.prisma.user.create({
       data: {
         email,
         password: await bcrypt.hash(password, 10),
         name,
-        roles: isProfessional ? [UserRoleEnum.admin] : [UserRoleEnum.patient],
+        roles: isProfessional
+          ? [UserRoleEnum.professional]
+          : [UserRoleEnum.patient],
+        accountVerifyToken: accountVerifyToken,
       },
     });
+
+    await this.mailerService.sendMail({
+      email: email,
+      subject: 'Verificação de conta',
+      template: PlaidVerifyIdentityEmail({
+        url: url,
+      }),
+    });
+
+    return {
+      message: 'Usuário criado com sucesso',
+    };
   }
 
   private async validateUser(
@@ -121,6 +152,134 @@ export class AuthService {
     return user;
   }
 
+  async resendVerificationCode(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    const accountVerifyToken = crypto.randomUUID();
+
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        accountVerifyToken,
+      },
+    });
+
+    const BACKEND_URL = this.configService.get('BACKEND_URL');
+
+    const url = `${BACKEND_URL}/auth/verify-account?token=${accountVerifyToken}`;
+
+    await this.mailerService.sendMail({
+      email: user.email,
+      subject: 'Verificação de conta',
+      template: PlaidVerifyIdentityEmail({
+        url: url,
+      }),
+    });
+
+    return {
+      message: 'Email enviado com sucesso',
+    };
+  }
+
+  async verifyAccount(token: string, res: Response) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        accountVerifyToken: token,
+      },
+    });
+
+    const FRONTEND_URL = this.configService.get('FRONTEND_URL');
+
+    if (!user) {
+      res.redirect(`${FRONTEND_URL}/errors?error=invalid-token`);
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        accountVerifyToken: null,
+        accountVerifiedAt: new Date(),
+      },
+    });
+
+    return res.redirect(`${FRONTEND_URL}/login`);
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    const resetPasswordToken = crypto.randomUUID();
+
+    await this.prisma.user.update({
+      where: {
+        email,
+      },
+      data: {
+        resetPasswordToken,
+      },
+    });
+
+    const frontEndUrl = this.configService.get('FRONTEND_URL');
+
+    await this.mailerService.sendMail({
+      email: email,
+      subject: 'Redefinição de senha',
+      template: PlaidResetPasswordEmail({
+        url: `${frontEndUrl}/reset-password?token=${resetPasswordToken}`,
+      }),
+    });
+
+    return {
+      message: 'Email enviado com sucesso',
+    };
+  }
+
+  async resetPassword(token: string, password: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        resetPasswordToken: token,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('Token inválido', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: await bcrypt.hash(password, 10),
+        resetPasswordToken: null,
+      },
+    });
+
+    return {
+      message: 'Senha alterada com sucesso',
+    };
+  }
+
   async me(id: string) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -132,6 +291,7 @@ export class AuthService {
         id: true,
         image: true,
         roles: true,
+        accountVerifiedAt: true,
       },
     });
     return user;

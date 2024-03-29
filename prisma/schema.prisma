@@ -21,7 +21,9 @@ model Activity {
 model Appointment {
   id             String                @id @default(uuid())
   startDate      DateTime
-  endDate        DateTime
+  timeZone       Decimal               @default(0)
+  startDateTime  String
+  endDateTime    String
   status         AppointmentStatusEnum @default(scheduled)
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @default(now())
@@ -104,7 +106,7 @@ model User {
   name               String
   email              String            @unique
   password           String?
-  resetPasswordToken String?
+  resetPasswordToken String?           @unique
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   image              String?
@@ -124,7 +126,7 @@ model User {
   favoriteExercises  ExercisesOnUser[]
   professional       Professional?
   accountVerifiedAt  DateTime?
-  accountVerifyToken String?
+  accountVerifyToken String?           @unique
 }
 
 model Request {
@@ -182,6 +184,7 @@ enum FileTypeEnum {
 enum ExtensionEnum {
   jpg
   jpeg
+  webp
   png
   gif
   mp4
@@ -215,13 +218,14 @@ model Address {
 }
 
 enum ExerciseCategoryEnum {
-  legs
-  arms
-  back
-  chest
+  ankleAndFeet
+  knees
+  hipAndPelvis
+  thoracicAndLowBack
+  cervical
+  fistsAndHands
   shoulders
-  abs
-  cardio
+  elbowsAndForearms
 }
 
 enum RoutineFrequencyTypeEnum {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import 'dotenv/config';
 import { ActivitiesModule } from './activities/activities.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
@@ -9,6 +10,8 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
 import { EvolutionsModule } from './evolutions/evolutions.module';
 import { ExercisesModule } from './exercises/exercises.module';
+import { LeadsModule } from './leads/leads.module';
+import { MailModule } from './mail/mail.module';
 import { PatientsModule } from './patients/patients.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
@@ -16,8 +19,6 @@ import { RequestsModule } from './requests/requests.module';
 import { RoutinesModule } from './routines/routines.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { UsersModule } from './users/users.module';
-import { MailModule } from './mail/mail.module';
-import { LeadsModule } from './leads/leads.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LeadsModule } from './leads/leads.module';
       secret: process.env.JWT_KEY,
       signOptions: { expiresIn: '7d' },
     }),
+
     AuthModule,
     ExercisesModule,
     UsersModule,
@@ -43,8 +45,8 @@ import { LeadsModule } from './leads/leads.module';
     PrismaModule,
     AnalyticsModule,
     RequestsModule,
-    MailModule,
     LeadsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
