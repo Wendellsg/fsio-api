@@ -73,6 +73,12 @@ export class PatientsService {
     professionalId: string,
     newPatient: { name: string; email: string },
   ) {
+    if (!professionalId)
+      throw new HttpException(
+        'Profissional não encontrado',
+        HttpStatus.NOT_FOUND,
+      );
+
     try {
       const userExists = await this.prisma.user.findFirst({
         where: {
@@ -110,6 +116,7 @@ export class PatientsService {
         message: 'Paciente criado com sucesso',
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'Erro ao criar paciente',
         HttpStatus.INTERNAL_SERVER_ERROR,

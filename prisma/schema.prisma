@@ -167,7 +167,7 @@ model FileUploaded {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   name      String
-  key       String
+  key       String        @unique
   type      FileTypeEnum
   size      Int
   extension ExtensionEnum

@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User, UserRoleEnum } from '@prisma/client';
+import { Prisma, User, UserRoleEnum } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import PlaidResetPasswordEmail from 'src/emails/forgotPassword';
@@ -85,16 +85,21 @@ export class AuthService {
 
     const url = `${BACKEND_URL}/auth/verify-account?token=${accountVerifyToken}`;
 
+    const roles = [];
+    roles.push(UserRoleEnum.patient);
+    const newUserPayload: Prisma.UserUncheckedCreateInput = {
+      email,
+      password: await bcrypt.hash(password, 10),
+      name,
+      accountVerifyToken: accountVerifyToken,
+    };
+    if (isProfessional) {
+      roles.push(UserRoleEnum.professional);
+    }
+    newUserPayload['roles'] = roles;
+
     await this.prisma.user.create({
-      data: {
-        email,
-        password: await bcrypt.hash(password, 10),
-        name,
-        roles: isProfessional
-          ? [UserRoleEnum.professional]
-          : [UserRoleEnum.patient],
-        accountVerifyToken: accountVerifyToken,
-      },
+      data: newUserPayload,
     });
 
     await this.mailerService.sendMail({
