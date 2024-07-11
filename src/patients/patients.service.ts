@@ -112,6 +112,8 @@ export class PatientsService {
         },
       });
 
+      //TODO - Enviar email de boas vindas
+
       return {
         message: 'Paciente criado com sucesso',
       };
