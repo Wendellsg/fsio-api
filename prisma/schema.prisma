@@ -141,25 +141,27 @@ model Request {
 }
 
 model Professional {
-  id           String        @id @default(uuid())
-  address      Address       @relation(fields: [addressId], references: [id], onDelete: Cascade)
-  addressId    String        @unique
+  id           String                @id @default(uuid())
+  email        String                @unique
+  address      Address?              @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId    String?               @unique
   phone        String?
+  title        ProfessionalTitleEnum @default(dr)
   profession   String
   license      String
   licenseState String
   licenseImage String?
   verifiedAt   DateTime?
   presentation String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
   appointments Appointment[]
   evolutions   Evolution[]
   routines     Routine[]
   requests     Request[]
-  patients     User[]        @relation("ProfessionalsToPatients")
-  userId       String        @unique
-  user         User          @relation(fields: [userId], references: [id])
+  patients     User[]                @relation("ProfessionalsToPatients")
+  userId       String                @unique
+  user         User                  @relation(fields: [userId], references: [id])
 }
 
 model FileUploaded {
@@ -256,6 +258,11 @@ enum RequestStatusEnum {
   pending
   accepted
   rejected
+}
+
+enum ProfessionalTitleEnum {
+  dra
+  dr
 }
 
 model Lead {
