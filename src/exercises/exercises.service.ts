@@ -23,7 +23,9 @@ export class ExercisesService {
   }
 
   async findAll(search?: string, category?: ExerciseCategoryEnum) {
-    const query: Prisma.ExerciseFindManyArgs = {};
+    const query: Prisma.ExerciseFindManyArgs = {
+      where: {},
+    };
     if (search) {
       query.where.name = {
         contains: search,
@@ -35,6 +37,7 @@ export class ExercisesService {
     }
     try {
       const exercises = await this.prisma.exercise.findMany(query);
+
       return exercises;
     } catch (error) {
       throw new HttpException(
