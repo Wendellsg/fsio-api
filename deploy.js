@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config();
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+console.log('Loaded environment variables:', process.env);
 const { execSync } = require('child_process');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
