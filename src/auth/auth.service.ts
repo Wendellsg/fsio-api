@@ -9,6 +9,14 @@ import { PlaidVerifyIdentityEmail } from 'src/emails/verificationCode';
 import { MailService } from 'src/mail/mail.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
+export type JwtPayload = {
+  id: string;
+  email: string;
+  roles: UserRoleEnum[];
+  accountVerified: boolean;
+  professionalId?: string;
+};
+
 @Injectable()
 export class AuthService {
   constructor(

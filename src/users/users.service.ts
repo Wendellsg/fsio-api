@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { JwtPayload } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -83,12 +84,29 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: Prisma.UserUpdateInput) {
+  async update(
+    id: string,
+    updateUserDto: Prisma.UserUpdateInput,
+    user: JwtPayload,
+  ) {
     delete updateUserDto.password;
     delete updateUserDto.email;
     delete updateUserDto.resetPasswordToken;
 
     try {
+      const userToUpdate = await this.prisma.user.findFirst({
+        where: {
+          id: id,
+        },
+      });
+
+      if (userToUpdate.id !== user.id && !user.roles.includes('admin')) {
+        throw new HttpException(
+          'Você não tem permissão para atualizar este usuário',
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
       const updatedUser = await this.prisma.user.update({
         where: {
           id: id,
