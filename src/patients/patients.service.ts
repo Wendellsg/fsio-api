@@ -1,7 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserRoleEnum } from '@prisma/client';
+// biome-ignore lint/style/useImportType: <explanation>
 import { PrismaService } from 'src/prisma/prisma.service';
-import { GetPatientResponseDTO, UpdatePatientDto } from './dtos';
+import type { GetPatientResponseDTO, UpdatePatientDto } from './dtos';
 
 @Injectable()
 export class PatientsService {
@@ -17,7 +18,10 @@ export class PatientsService {
         email: true,
         image: true,
         weight: true,
+        phone: true,
         height: true,
+        birthDate: true,
+        address: true,
         professionals: {
           select: {
             id: true,
@@ -56,17 +60,14 @@ export class PatientsService {
     if (!patient)
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
 
-    if (
-      !patient.professionals.find(
-        (professional) => professional.id === professionalId,
-      )
-    )
+    const isProfessionalOfPatient = !!patient.professionals.find(
+      (professional) => professional.id === professionalId,
+    );
+
+    if (!isProfessionalOfPatient)
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
 
-    return {
-      message: 'Usuário encontrado',
-      data: patient,
-    };
+    return patient;
   }
 
   async create(

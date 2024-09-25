@@ -103,6 +103,14 @@ export class AuthService {
     };
     if (isProfessional) {
       roles.push(UserRoleEnum.professional);
+      newUserPayload['professional'] = {
+        create: {
+          email,
+          license: 'DEFAULT',
+          licenseState: '',
+          profession: '',
+        },
+      };
     }
     newUserPayload['roles'] = roles;
 
