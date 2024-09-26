@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Prisma, UserRoleEnum } from '@prisma/client';
-import { AuthGuard, Roles } from 'src/auth/auth.guard';
+import { AuthGuard, RequestWithUser, Roles } from 'src/auth/auth.guard';
 import { RoutinesService } from './routines.service';
 
 @Controller('routines')
@@ -21,8 +21,8 @@ export class RoutinesController {
   @UseGuards(AuthGuard)
   @Post()
   create(
-    @Body() createRoutineDto: Prisma.RoutineCreateInput,
-    @Request() request,
+    @Body() createRoutineDto: Prisma.RoutineUncheckedCreateInput,
+    @Request() request: RequestWithUser,
   ) {
     return this.routinesService.create(
       request.user.professionalId,

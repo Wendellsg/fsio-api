@@ -12,12 +12,12 @@ export class RoutinesService {
 
   async create(
     professionalId: string,
-    createRoutineDto: Prisma.RoutineCreateInput,
+    createRoutineDto: Prisma.RoutineUncheckedCreateInput,
   ) {
     try {
       const professional = await this.prisma.professional.findUnique({
         where: {
-          userId: professionalId,
+          id: professionalId,
         },
       });
 
@@ -30,8 +30,6 @@ export class RoutinesService {
 
       await this.prisma.routine.create({
         data: {
-          user: createRoutineDto.user,
-          exercise: createRoutineDto.exercise,
           description: createRoutineDto.description,
           frequency: createRoutineDto.frequency,
           frequencyType:
@@ -39,11 +37,9 @@ export class RoutinesService {
           period: RoutinePeriodEnum[createRoutineDto.period],
           repetitions: createRoutineDto.repetitions,
           series: createRoutineDto.series,
-          professional: {
-            connect: {
-              id: professionalId,
-            },
-          },
+          professionalId: professional.id,
+          userId: createRoutineDto.userId,
+          exerciseId: createRoutineDto.exerciseId,
         },
       });
 

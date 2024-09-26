@@ -18,7 +18,7 @@ export class ActivitiesController {
   @Roles(UserRoleEnum.professional, UserRoleEnum.patient)
   @UseGuards(AuthGuard)
   @Post()
-  create(@Body() createActivityDto: Prisma.ActivityCreateInput) {
+  create(@Body() createActivityDto: Prisma.ActivityUncheckedCreateInput) {
     return this.activitiesService.create(createActivityDto);
   }
 

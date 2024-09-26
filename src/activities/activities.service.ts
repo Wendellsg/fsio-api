@@ -5,7 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createActivityDto: Prisma.ActivityCreateInput) {
+  async create(createActivityDto: Prisma.ActivityUncheckedCreateInput) {
     try {
       await this.prisma.activity.create({
         data: {
@@ -13,7 +13,7 @@ export class ActivitiesService {
           comments: createActivityDto.comments,
           effortLevel: createActivityDto.effortLevel,
           painLevel: createActivityDto.painLevel,
-          routine: createActivityDto.routine,
+          routineId: createActivityDto.routineId,
         },
       });
 
