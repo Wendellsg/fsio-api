@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserRoleEnum } from '@prisma/client';
+import type { JwtPayload } from 'src/auth/auth.service';
 // biome-ignore lint/style/useImportType: <explanation>
 import { PrismaService } from 'src/prisma/prisma.service';
 import type { GetPatientResponseDTO, UpdatePatientDto } from './dtos';
@@ -25,33 +26,6 @@ export class PatientsService {
         professionals: {
           select: {
             id: true,
-          },
-        },
-        routines: {
-          select: {
-            professional: {
-              select: {
-                id: true,
-              },
-            },
-            activities: true,
-            exercise: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                image: true,
-              },
-            },
-            id: true,
-            description: true,
-            frequency: true,
-            frequencyType: true,
-            period: true,
-            repetitions: true,
-            series: true,
-            createdAt: true,
-            updatedAt: true,
           },
         },
       },
@@ -330,7 +304,13 @@ export class PatientsService {
         where: {
           id: patientId,
         },
-        data: { ...updatePatientDto },
+        data: {
+          name: updatePatientDto.name,
+          height: updatePatientDto.height,
+          weight: updatePatientDto.weight,
+          phone: updatePatientDto.phone,
+          birthDate: updatePatientDto.birthDate,
+        },
       });
 
       return {
@@ -368,5 +348,23 @@ export class PatientsService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async getRoutines(patientId: string, user: JwtPayload) {
+    const routines = await this.prisma.routine.findMany({
+      where: {
+        userId: patientId,
+      },
+      include: {
+        exercise: true,
+        professional: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    return routines;
   }
 }

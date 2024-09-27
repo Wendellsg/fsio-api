@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserRoleEnum } from '@prisma/client';
-import { AuthGuard, Roles } from 'src/auth/auth.guard';
+import { AuthGuard, RequestWithUser, Roles } from 'src/auth/auth.guard';
 import { UpdatePatientDto } from './dtos';
 import { PatientsService } from './patients.service';
 
@@ -66,5 +66,13 @@ export class PatientsController {
   @Delete(':id')
   remove(@Param('id') id: string, @Request() request) {
     return this.patientsService.remove(id, request.user.professionalId);
+  }
+
+  //Routines
+
+  @UseGuards(AuthGuard)
+  @Get(':id/routines')
+  findRoutines(@Param('id') id: string, @Request() request: RequestWithUser) {
+    return this.patientsService.getRoutines(id, request.user);
   }
 }
