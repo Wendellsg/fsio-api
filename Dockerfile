@@ -2,8 +2,8 @@ FROM node:18.18.2-alpine AS base
 
 USER root
 
-# Instala pnpm via npm
-RUN npm install -g pnpm
+# Instala yarn via apk
+RUN apk add --no-cache yarn
 
 USER node
 
@@ -13,17 +13,17 @@ WORKDIR /home/node/project
 
 FROM base AS build
 
-COPY --chown=node:node package.json pnpm-lock.yaml ./
+COPY --chown=node:node package.json yarn.lock ./
 
-RUN pnpm install --frozen-lockfile
+RUN yarn install --frozen-lockfile
 
 COPY --chown=node:node tsconfig.json ./
 COPY --chown=node:node src src/
 COPY --chown=node:node prisma prisma/
 
-RUN pnpm build
+RUN yarn build
 
-RUN pnpm install --production --ignore-scripts --prefer-offline
+RUN yarn install --production --ignore-scripts --prefer-offline
 
 FROM base AS deploy
 
@@ -32,4 +32,4 @@ COPY --from=build /home/node/project/dist dist/
 COPY --from=build /home/node/project/package.json package.json
 COPY --from=build /home/node/project/prisma prisma/
 
-CMD ["pnpm", "start:prod"]
+CMD ["yarn", "start:prod"]
