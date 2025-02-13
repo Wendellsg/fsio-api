@@ -9,10 +9,15 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { UserRoleEnum } from '@prisma/client';
 import { Request } from 'express';
+import { JwtPayload } from './auth.service';
 
 export const ROLE_KEY = 'role';
 
 export const Roles = (...role: UserRoleEnum[]) => SetMetadata(ROLE_KEY, role);
+
+export type RequestWithUser = Request & {
+  user: JwtPayload;
+};
 
 @Injectable()
 export class AuthGuard implements CanActivate {

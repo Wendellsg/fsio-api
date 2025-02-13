@@ -1,6 +1,9 @@
 export type UpdatePatientDto = {
   weight?: number;
   height?: number;
+  phone?: string;
+  name?: string;
+  birthDate?: Date;
 };
 
 export type GetPatientResponseDTO = Array<{

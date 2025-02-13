@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Prisma, UserRoleEnum } from '@prisma/client';
-import { AuthGuard, Roles } from 'src/auth/auth.guard';
+import { AuthGuard, RequestWithUser, Roles } from 'src/auth/auth.guard';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -59,25 +59,22 @@ export class UsersController {
     return this.usersService.findByEmail(email);
   }
 
+  @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
-  @UseGuards(AuthGuard)
-  @Patch()
-  update(@Request() request, @Body() updateUserDto: Prisma.UserUpdateInput) {
-    return this.usersService.update(request.user.id, updateUserDto);
-  }
 
-  @Roles(UserRoleEnum.admin)
   @UseGuards(AuthGuard)
   @Patch(':id')
   updateByAdmin(
     @Param('id') id: string,
     @Body() updateUserDto: Prisma.UserUpdateInput,
+    @Request() request: RequestWithUser,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(id, updateUserDto, request.user);
   }
+
   @Roles(UserRoleEnum.admin)
   @UseGuards(AuthGuard)
   @Delete(':id')

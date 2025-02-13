@@ -1,7 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserRoleEnum } from '@prisma/client';
+import type { JwtPayload } from 'src/auth/auth.service';
+// biome-ignore lint/style/useImportType: <explanation>
 import { PrismaService } from 'src/prisma/prisma.service';
-import { GetPatientResponseDTO, UpdatePatientDto } from './dtos';
+import type { GetPatientResponseDTO, UpdatePatientDto } from './dtos';
 
 @Injectable()
 export class PatientsService {
@@ -17,37 +19,13 @@ export class PatientsService {
         email: true,
         image: true,
         weight: true,
+        phone: true,
         height: true,
+        birthDate: true,
+        address: true,
         professionals: {
           select: {
             id: true,
-          },
-        },
-        routines: {
-          select: {
-            professional: {
-              select: {
-                id: true,
-              },
-            },
-            activities: true,
-            exercise: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                image: true,
-              },
-            },
-            id: true,
-            description: true,
-            frequency: true,
-            frequencyType: true,
-            period: true,
-            repetitions: true,
-            series: true,
-            createdAt: true,
-            updatedAt: true,
           },
         },
       },
@@ -56,17 +34,14 @@ export class PatientsService {
     if (!patient)
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
 
-    if (
-      !patient.professionals.find(
-        (professional) => professional.id === professionalId,
-      )
-    )
+    const isProfessionalOfPatient = !!patient.professionals.find(
+      (professional) => professional.id === professionalId,
+    );
+
+    if (!isProfessionalOfPatient)
       throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
 
-    return {
-      message: 'Usuário encontrado',
-      data: patient,
-    };
+    return patient;
   }
 
   async create(
@@ -329,7 +304,13 @@ export class PatientsService {
         where: {
           id: patientId,
         },
-        data: { ...updatePatientDto },
+        data: {
+          name: updatePatientDto.name,
+          height: updatePatientDto.height,
+          weight: updatePatientDto.weight,
+          phone: updatePatientDto.phone,
+          birthDate: updatePatientDto.birthDate,
+        },
       });
 
       return {
@@ -367,5 +348,23 @@ export class PatientsService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async getRoutines(patientId: string, user: JwtPayload) {
+    const routines = await this.prisma.routine.findMany({
+      where: {
+        userId: patientId,
+      },
+      include: {
+        exercise: true,
+        professional: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    return routines;
   }
 }
