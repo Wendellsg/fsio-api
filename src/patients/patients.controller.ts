@@ -26,6 +26,7 @@ export class PatientsController {
     patient: {
       name: string;
       email: string;
+      birthDate: Date;
     },
     @Request() request,
   ) {

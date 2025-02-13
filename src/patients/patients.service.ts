@@ -46,7 +46,7 @@ export class PatientsService {
 
   async create(
     professionalId: string,
-    newPatient: { name: string; email: string },
+    newPatient: { name: string; email: string, birthDate: Date },
   ) {
     if (!professionalId)
       throw new HttpException(

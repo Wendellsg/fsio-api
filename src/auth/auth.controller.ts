@@ -22,6 +22,11 @@ export class AuthController {
     return this.authService.login(body.email, body.password);
   }
 
+  @Post('login/patient')
+  async patientLogin(@Body() body: { email: string; birthDate: Date }) {
+    return this.authService.patientLogin(body.email, body.birthDate);
+  }
+
   @Post('sign-up')
   async signUp(
     @Body()

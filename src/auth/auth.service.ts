@@ -57,6 +57,34 @@ export class AuthService {
     return { token };
   }
 
+  async patientLogin(
+    email: string,
+    birthDate: Date,
+  ): Promise<{
+    token: string;
+  }> {
+    // Verificar o email e a senha do usuário (geralmente obtidos a partir de um banco de dados)
+    const user = await this.validatePatient(email, birthDate);
+
+    if (!user) {
+      throw new HttpException('Credenciais inválidas', HttpStatus.UNAUTHORIZED);
+    }
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      roles: [UserRoleEnum.patient],
+      accountVerified: true,
+    };
+
+    // Gerar um token JWT
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_SECRET,
+    });
+
+    return { token };
+  }
+
   async signUp({
     email,
     password,
@@ -129,6 +157,37 @@ export class AuthService {
     return {
       message: 'Usuário criado com sucesso',
     };
+  }
+
+  private async validatePatient(email: string, birthDate: Date): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException(
+        {
+          message: 'Usuário não encontrado',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const userBirthDate = new Date(user.birthDate).toISOString().split('T')[0];
+    const comingBirthDate = new Date(birthDate).toISOString().split('T')[0];
+
+    if (userBirthDate !== comingBirthDate) {
+      throw new HttpException(
+        {
+          message: 'Credenciais inválidas',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    return user;
   }
 
   private async validateUser(
